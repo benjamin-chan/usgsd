@@ -29,7 +29,7 @@
 # use forward slashes instead of back slashes
 
 # uncomment this line by removing the `#` at the front..
-# setwd( "C:/My Directory/ARF/" )
+setwd( "E:/Share/DataRepository/AHRF" )
 # ..in order to set your current working directory
 
 
