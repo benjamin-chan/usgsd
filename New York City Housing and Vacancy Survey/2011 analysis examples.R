@@ -2,6 +2,16 @@
 # new york city housing and vacancy survey
 # 2011
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NYCHVS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/New%20York%20City%20Housing%20and%20Vacancy%20Survey/2011%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -73,11 +83,11 @@
 # install.packages( "survey" )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
+library(survey)		# load survey package (analyzes complex design surveys)
 
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

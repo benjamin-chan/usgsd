@@ -59,6 +59,19 @@ sas.is.evil <-
 		tf
 	}
 
+remove.fakecnt.lines <-
+	function( sas_ri ){
+		
+		tf <- tempfile()
+		z <- readLines( sas_ri )
+		
+		z <- z[ !grepl( "fakecnt" , tolower( z ) ) ]
+	
+		writeLines( z , tf )
+		
+		tf
+	}
+
 # yet another silly specific hardcoded recode
 # because sas is a trainwreck of a language
 sas.is.quite.evil <-
@@ -90,8 +103,9 @@ remove.tabs <-
 	}
 
 
+
 add.decimals <-
-	function( sas_ri ){
+	function( sas_ri , precise = FALSE ){
 	
 		tf <- tempfile()
 		
@@ -119,14 +133,34 @@ add.decimals <-
 		# decimals to paste
 		dtp <- unlist( lapply( lnd , "[[" , 2 ) )
 
-		# loop through every variable needing decimals
-		# and replace the variable text with the variable plus the number dot number
-		for ( i in seq( length( vnd ) ) ) z[ grep( vnd[ i ] , z ) ] <- paste( z[ grep( vnd[ i ] , z ) ] , dtp[ i ] )
+		# if the precision flag is marked..
+		if ( precise ){
+		
+			# loop through every variable needing decimals
+			for ( i in seq( length( vnd ) ) ){
 
+				# search for strings beginning with the *exact* string
+				begins.with.length <- nchar( vnd[ i ] )
+				
+				lines.to.replace <- substr( z , 1 , begins.with.length ) == vnd[ i ]
+		
+				z[ lines.to.replace ] <- paste( z[ lines.to.replace ] , dtp[ i ] )
+		
+			}
+		
+		} else {
+		
+			# loop through every variable needing decimals
+			# and replace the variable text with the variable plus the number dot number
+			for ( i in seq( length( vnd ) ) ) z[ grep( vnd[ i ] , z ) ] <- paste( z[ grep( vnd[ i ] , z ) ] , dtp[ i ] )
+			
+		}
+			
 		writeLines( z , tf )
 		
 		tf
 	}
+
 
 	
 find.chars <-
@@ -174,7 +208,7 @@ find.chars <-
 			
 			# and add dollar signs to the appropriate lines..
 			# (note - add a space in the search to assure right-hand-side whole-word-only
-			for ( i in char.fields ) z <- gsub( paste0( i , " " ) , paste( i , "$" ) , z , fixed = TRUE )
+			for ( i in char.fields ) z <- gsub( paste0( i , " \\$*" ) , paste( i , "$" ) , z )
 			
 			# ..then write them to the temporary file
 			writeLines( z , tf )

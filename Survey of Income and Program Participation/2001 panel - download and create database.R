@@ -5,6 +5,16 @@
 # 3 panel year replicate weights, 3 calendar year replicate weights, 1 longitudinal weights
 # 1 household public use extract, 1 welfare reform topical module
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SIPP/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Income%20and%20Program%20Participation/2001%20panel%20-%20download%20and%20create%20database.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -59,9 +69,9 @@ sipp.pnl.longitudinal.replicate.weights <- paste0( 'pnl' , 1:3 )	# 1-3 reads in 
 # # # # # # # # #
 
 
-require(RSQLite) 	# load RSQLite package (creates database files in R)
-require(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
-require(downloader)	# downloads and then runs the source() function on scripts from github
+library(RSQLite) 	# load RSQLite package (creates database files in R)
+library(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
+library(downloader)	# downloads and then runs the source() function on scripts from github
 
 
 # open the connection to the sqlite database
@@ -93,25 +103,133 @@ fix.ct <-
 ##############################################################################
 
 
+##################################################################################
+# sas importation scripts with an `SUID` column near the end
+# are incorrect.  the census bureau just left them in,
+# and the SAScii package won't just throw 'em out for ya.
+# so throw out the non-public lines manually.
+chop.suid <-
+	function( sf ){
+
+		# create a temporary file
+		tf <- tempfile()
+		
+		# read the sas lines into memory
+		sl <- readLines( sf )
+
+		# figure out the position of the `suid` variable..
+		where.to.chop <- which( grepl( 'suid' , tolower( sl ) ) & !grepl( 'ssuid' , tolower( sl ) ) )
+
+		# if it exists..
+		if( length( where.to.chop ) > 0 ){
+
+			# find all semicolons in the document..
+			semicolons <- grep( ';' , sl )
+
+			# ..now, more precisely, find the first semicolon after the chop-line
+			end.of.chop <- min( semicolons[ semicolons > where.to.chop ] ) - 1
+			
+			# remove non-public lines
+			sl <- sl[ -where.to.chop:-end.of.chop ]
+
+		}
+
+		# write the sas import script to the text file..
+		writeLines( sl , tf )
+
+		# ..and return the position of the text file on the local disk.
+		tf
+
+	}
+##################################################################################
+
+
+###################################################################################
+# function to fix sas input scripts where repwgt values are collapsed into one line
+# (the SAScii function cannot currently handle this SAS configuration on its own)
+fix.repwgt <-
+	function( sasfile ){
+		sas_lines <- readLines( sasfile )
+
+		# identify the line containing REPWGT
+		rep.position <- grep( "REPWGT" , sas_lines )
+		
+		# look at the line directly above it..
+		line.above <- strsplit( sas_lines[ rep.position - 1 ] , "-" )[[1]]
+		
+		# ..and figure out what position it ends at
+		end.position <- as.numeric( line.above[ length( line.above ) ] )
+		
+		# start with a line containing ()
+		j <- sas_lines[ rep.position ]
+
+		# courtesy of this discussion on stackoverflow.com
+		# http://stackoverflow.com/questions/8613237/extract-info-inside-all-parenthesis-in-r-regex
+		# break it into two strings without the ()
+		k <- gsub( 
+				"[\\(\\)]", 
+				"" , 
+				regmatches(
+					j , 
+					gregexpr( 
+						"\\(.*?\\)" , 
+						j
+					)
+				)[[1]]
+			)
+
+		# number of repweights
+		l <- as.numeric( gsub( "REPWGT1-REPWGT" , "" , k )[1] )
+
+		# length of repweights (assumes no decimals!)
+		m <- as.numeric( k[2] )
+
+		# these should start at the end position (determined above) plus one
+		start.vec <- ( end.position + 1 ) + ( m * 0:( l - 1 ) )
+		end.vec <- ( end.position ) + ( m * 1:l )
+		
+		
+		# vector of all repweight lines
+		repwgt.lines <-
+			paste0( "REPWGT" , 1:l , " " , start.vec , "-" , end.vec )
+
+		# collapse them all together into one string
+		repwgt.line <- paste( repwgt.lines , collapse = " " )
+
+		# finally replace the old line with the new line in the sas input script
+		sas_lines <- gsub( j , repwgt.line , sas_lines , fixed = TRUE )
+		
+		# create a temporary file
+		tf <- tempfile()
+		
+		# write the updated sas input file to the temporary file
+		writeLines( sas_lines , tf )
+
+		# return the filepath to the temporary file containing the updated sas input script
+		tf
+	}
+##################################################################################
+
+
 # load the read.SAScii.sqlite function (a variant of read.SAScii that creates a database directly)
 source_url( "https://raw.github.com/ajdamico/usgsd/master/SQLite/read.SAScii.sqlite.R" , prompt = FALSE )
 
 # set the locations of the data files on the ftp site
 SIPP.core.sas <-
-	"http://smpbff2.dsd.census.gov/pub/sipp/2001/p01puw1.sas"
+	"http://thedataweb.rm.census.gov/pub/sipp/2001/p01puw1.sas"
 	
 SIPP.replicate.sas <-
-	"http://smpbff2.dsd.census.gov/pub/sipp/2001/rw01wx.sas"
+	"http://thedataweb.rm.census.gov/pub/sipp/2001/rw01wx.sas"
 	
 SIPP.longitudinal.replicate.sas <-
-	"http://smpbff2.dsd.census.gov/pub/sipp/2001/repwgt_sas_input.sas"
+	"http://thedataweb.rm.census.gov/pub/sipp/2001/lrw01_xx.sas"
 
 # if the household extract flag has been set to TRUE above..
 if ( sipp.household.extract ){
 
 	# the census SIPP FTP site does not have a SAS input script,
 	# so create one using the dictionary at
-	# http://smpbff2.dsd.census.gov/pub/sipp/2001/hhpuw1d.txt
+	# http://thedataweb.rm.census.gov/pub/sipp/2001/hhpuw1d.txt
 
 	# write an example SAS import script using the dash method
 	sas.import.with.at.signs <-
@@ -133,13 +251,13 @@ if ( sipp.household.extract ){
 	
 	# add the longitudinal weights to the database in a table 'hh' (household)
 	read.SAScii.sqlite(
-		"http://smpbff2.dsd.census.gov/pub/sipp/2001/hhldpuw1.zip" ,
-		fix.ct( sas.import.with.at.signs.tf ) ,
+		"http://thedataweb.rm.census.gov/pub/sipp/2001/hhldpuw1.zip" ,
+		chop.suid( fix.ct( sas.import.with.at.signs.tf ) ) ,
 		# note no beginline = parameter in this read.SAScii.sqlite() call
 		zipped = T ,
 		tl = TRUE ,
 		tablename = "hh" ,
-		db = db
+		conn = db
 	)
 }
 	
@@ -148,13 +266,13 @@ if ( sipp.welfare.reform.module ){
 
 	# add the longitudinal weights to the database in a table 'wf' (welfare)
 	read.SAScii.sqlite(
-		"http://smpbff2.dsd.census.gov/pub/sipp/2001/p01putm8x.zip" ,
-		fix.ct( "http://smpbff2.dsd.census.gov/pub/sipp/2001/p01putm8x.sas" ) ,
+		"http://thedataweb.rm.census.gov/pub/sipp/2001/p01putm8x.zip" ,
+		chop.suid( fix.ct( "http://thedataweb.rm.census.gov/pub/sipp/2001/p01putm8x.sas" ) ) ,
 		beginline = 5 ,
 		zipped = T ,
 		tl = TRUE ,
 		tablename = "wf" ,
-		db = db
+		conn = db
 	)
 }
 	
@@ -163,7 +281,7 @@ if ( sipp.longitudinal.weights ){
 
 	# the census SIPP FTP site does not have a SAS input script,
 	# so create one using the dictionary at
-	# http://smpbff2.dsd.census.gov/pub/sipp/2001/lgtwt01d.txt
+	# http://thedataweb.rm.census.gov/pub/sipp/2001/lgtwt01d.txt
 
 	# write an example SAS import script using the dash method
 	sas.import.with.at.signs <-
@@ -189,13 +307,13 @@ if ( sipp.longitudinal.weights ){
 	
 	# add the longitudinal weights to the database in a table 'w9'
 	read.SAScii.sqlite(
-		"http://smpbff2.dsd.census.gov/pub/sipp/2001/lgtwgt2001w9.zip" ,
-		fix.ct( sas.import.with.at.signs.tf ) ,
+		"http://thedataweb.rm.census.gov/pub/sipp/2001/lgtwgt2001w9.zip" ,
+		chop.suid( fix.ct( sas.import.with.at.signs.tf ) ) ,
 		# note no beginline = parameter in this read.SAScii.sqlite() call
 		zipped = T ,
 		tl = TRUE ,
 		tablename = "wgtw9" ,
-		db = db
+		conn = db
 	)
 }
 	
@@ -204,17 +322,17 @@ for ( i in sipp.core.waves ){
 
 	# figure out the exact ftp path of the .zip file
 	SIPP.core <-
-		paste0( "http://smpbff2.dsd.census.gov/pub/sipp/2001/l01puw" , i , ".zip" )
+		paste0( "http://thedataweb.rm.census.gov/pub/sipp/2001/l01puw" , i , ".zip" )
 
 	# add the core wave to the database in a table w#
 	read.SAScii.sqlite (
 			SIPP.core ,
-			fix.ct( SIPP.core.sas ) ,
+			chop.suid( fix.ct( SIPP.core.sas ) ) ,
 			beginline = 5 ,
 			zipped = T ,
 			tl = TRUE ,
 			tablename = paste0( "w" , i ) ,
-			db = db
+			conn = db
 		)
 }
 
@@ -223,17 +341,17 @@ for ( i in sipp.replicate.waves ){
 
 	# figure out the exact ftp path of the .zip file
 	SIPP.rw <-
-		paste0( "http://smpbff2.dsd.census.gov/pub/sipp/2001/rw01w" , i , ".zip" )
+		paste0( "http://thedataweb.rm.census.gov/pub/sipp/2001/rw01w" , i , ".zip" )
 
 	# add the wave-specific replicate weight to the database in a table rw#
 	read.SAScii.sqlite (
 			SIPP.rw ,
-			fix.ct( SIPP.replicate.sas ) ,
+			chop.suid( fix.ct( SIPP.replicate.sas ) ) ,
 			beginline = 5 ,
 			zipped = T ,
 			tl = TRUE ,
 			tablename = paste0( "rw" , i ) ,
-			db = db
+			conn = db
 		)
 }
 
@@ -242,21 +360,21 @@ for ( i in sipp.topical.modules ){
 
 	# figure out the exact ftp path of the .zip file
 	SIPP.tm <-
-		paste0( "http://smpbff2.dsd.census.gov/pub/sipp/2001/p01putm" , i , ".zip" )
+		paste0( "http://thedataweb.rm.census.gov/pub/sipp/2001/p01putm" , i , ".zip" )
 
 	# figure out the exact ftp path of the .sas file
 	SIPP.tm.sas <-
-		paste0( "http://smpbff2.dsd.census.gov/pub/sipp/2001/p01putm" , i , ".sas" )
+		paste0( "http://thedataweb.rm.census.gov/pub/sipp/2001/p01putm" , i , ".sas" )
 		
 	# add each topical module to the database in a table tm#
 	read.SAScii.sqlite (
 			SIPP.tm ,
-			fix.ct( SIPP.tm.sas ) ,
+			chop.suid( fix.ct( SIPP.tm.sas ) ) ,
 			beginline = 5 ,
 			zipped = T ,
 			tl = TRUE ,
 			tablename = paste0( "tm" , i ) ,
-			db = db
+			conn = db
 		)
 }
 
@@ -265,20 +383,28 @@ for ( i in c( sipp.cy.longitudinal.replicate.weights , sipp.pnl.longitudinal.rep
 
 	# figure out the exact ftp path of the .zip file
 	SIPP.lrw <-
-		paste0( "http://smpbff2.dsd.census.gov/pub/sipp/2001/lgtwgt" , i , ".zip" )
+		paste0( "http://thedataweb.rm.census.gov/pub/sipp/2001/lgtwgt" , i , ".zip" )
 		
 	# add each longitudinal replicate weight file to the database in a table cy1-3 or pnl1-3
 	read.SAScii.sqlite (
 			SIPP.lrw ,
-			fix.ct( SIPP.longitudinal.replicate.sas ) ,
-			beginline = 5 ,
+			fix.repwgt( SIPP.longitudinal.replicate.sas ) ,
+			beginline = 7 ,
 			zipped = T ,
 			tl = TRUE ,
 			tablename = i ,
-			db = db
+			conn = db
 		)
 }
 # the current working directory should now contain one database (.db) file
+
+
+# database goodwill check!
+# does every table in this sqlite database have *at least* one record?
+for ( tablename in dbListTables( db ) ){
+	stopifnot( dbGetQuery( db , paste( 'select count(*) from' , tablename ) ) > 0 )
+}
+# end of checking that every imported table has at least one record.
 
 
 # disconnect from the database

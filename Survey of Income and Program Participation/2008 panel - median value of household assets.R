@@ -2,6 +2,16 @@
 # survey of income and program participation
 # 2008 panel wave 7
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SIPP/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Income%20and%20Program%20Participation/2008%20panel%20-%20median%20value%20of%20household%20assets.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -45,8 +55,8 @@
 # install.packages( c( "survey" , "RSQLite" ) )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 
 
@@ -352,7 +362,7 @@ svyquantile( ~as.numeric( thhtnw - thhtheq ) , w , 0.5 )
 # note: these analysis examples are intentionally sparse
 # (to focus attention on the data manipulation part, which is much harder in sipp)
 # once the replicate-weighted survey design object has been created,
-# any of the features described on http://faculty.washington.edu/tlumley/survey/ can be used.
+# any of the features described on http://r-survey.r-forge.r-project.org/survey/ can be used.
 # all of the analysis examples shown for other survey data sets can be used on a sipp survey design too,
 # so be sure to check out other data sets on http://asdfree.com/ for more thorough examples
 

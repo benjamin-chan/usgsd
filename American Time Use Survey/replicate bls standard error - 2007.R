@@ -2,6 +2,16 @@
 # american time use survey
 # 2007
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/ATUS/2007/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20Time%20Use%20Survey/replicate%20bls%20standard%20error%20-%202007.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -54,10 +64,10 @@
 # install.packages( "survey" )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
+library(survey)		# load survey package (analyzes complex design surveys)
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

@@ -3,6 +3,16 @@
 # import a single HRS file
 # originally constructed by the University of Michigan
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/HRS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Health%20and%20Retirement%20Study/import%20example%20HRS%20file.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -50,7 +60,7 @@ sas.input <- "./download/1992/h92core/h92sas/HOUSEHLD.SAS"
 
 
 
-require(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
+library(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
 
 
 # load the ascii file directly into R using only a SAS script

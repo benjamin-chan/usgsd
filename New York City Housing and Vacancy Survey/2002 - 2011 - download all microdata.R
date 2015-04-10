@@ -2,6 +2,17 @@
 # new york city housing and vacancy survey
 # 2002-2011
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NYCHVS/" )
+# years.to.download <- c( 2002 , 2005 , 2008 , 2011 )
+# source_url( "https://raw.githubusercontent.com/ajdamico/usgsd/master/New%20York%20City%20Housing%20and%20Vacancy%20Survey/2002%20-%202011%20-%20download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -46,8 +57,8 @@
 # but why not just download them all?  ;)
 
 
-require(downloader)		# downloads and then runs the source() function on scripts from github
-require(SAScii) 		# load the SAScii package (imports ascii data with a SAS script)
+library(downloader)		# downloads and then runs the source() function on scripts from github
+library(SAScii) 		# load the SAScii package (imports ascii data with a SAS script)
 
 
 ############################################
@@ -100,30 +111,28 @@ for ( year in years.to.download ){
 	latesubyear <- ifelse( year == 2002 , '05' , subyear )
 	lateyear <- ifelse( year == 2002 , 2005 , year )
 
+	# they started naming things differently in 2011
+	if ( year == 2011 ) filetypes <- c( 'occ' , 'vac' , 'pers' ) else filetypes <- c( 'occ' , 'vac' , 'per' , 'ni' )
+		
+	web <- ifelse( year > 2005 , '_web' , '' )
 	
-	# only the occupied & vacant unit files are available for the most current year,
-	# so use those in 2011 but all four for previous years
-	if ( year == 2011 ) filetypes <- c( 'occ' , 'vac' ) else filetypes <- c( 'occ' , 'vac' , 'per' , 'ni' )
-	
+	prefix <- ifelse( year > 2008 , paste0( "/uf_" , latesubyear ) , paste0( "/lng" , latesubyear ) )
 	
 	# loop through each available filetype
 	for ( filetype in filetypes ){
 
 		# construct the url of the file to download #
-		
-		web <- ifelse( year > 2005 , '_web' , '' )
 
 		census.url <-
 			paste0( 
 				"http://www.census.gov/housing/nychvs/data/" , 
 				lateyear , 
-				"/lng" , 
-				latesubyear , 
+				prefix , 
 				"_" , 
 				filetype , 
-				subyear , 
+				ifelse( year > 2008 , '' , subyear ) , 
 				web , 
-				".dat" 
+				ifelse( year > 2008 , ".txt" , ".dat" )
 			)
 
 		# the `census.url` object now contains the complete filepath
@@ -161,7 +170,7 @@ for ( year in years.to.download ){
 		
 		# household weights need to be divided by one hundred thousand,
 		# person-weights need to be divided by ten for more recent years
-		if ( filetype != 'per' ) x$hhweight <- x$hhweight / 10^5 else if ( year > 2005 ) x$perwgt <- x$perwgt / 10
+		if ( !( filetype %in% c( 'per' , 'pers' ) ) ) x$hhweight <- x$hhweight / 10^5 else if ( year > 2005 ) x$perwgt <- x$perwgt / 10
 		
 		# save the data frame `x` to whatever the current filetype is
 		assign( filetype , x )

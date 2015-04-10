@@ -2,6 +2,16 @@
 # survey of business owners
 # 2007
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SBO/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Business%20Owners/recode%20and%20replicate.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -46,11 +56,10 @@
 # name the database (.db) file that should have been saved in the working directory
 sbo.dbname <- "sbo07.db"
 
-require(RSQLite) 			# load RSQLite package (creates database files in R)
-require(RSQLite.extfuns) 	# load RSQLite package (allows mathematical functions, like SQRT)
-require(mitools) 			# load mitools package (analyzes multiply-imputed data)
-require(survey) 			# load survey package (analyzes complex design surveys)
-require(downloader)			# downloads and then runs the source() function on scripts from github
+library(RSQLite) 			# load RSQLite package (creates database files in R)
+library(mitools) 			# load mitools package (analyzes multiply-imputed data)
+library(survey) 			# load survey package (analyzes complex design surveys)
+library(downloader)			# downloads and then runs the source() function on scripts from github
 
 
 # load sbo-specific functions (a specially-designed series of multiply-imputed, hybrid-survey-object setup to match the census bureau's tech docs)
@@ -58,7 +67,7 @@ source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Business
 
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 
@@ -87,7 +96,7 @@ db <- dbConnect( SQLite() , sbo.dbname )
 # connects the current instance of r to the sqlite database
 
 # load the mathematical functions in the r package RSQLite.extfuns
-init_extensions(db)
+initExtension(db)
 
 # now simply copy you'd like to recode into a new table
 dbSendQuery( db , "CREATE TABLE x AS SELECT * FROM y" )

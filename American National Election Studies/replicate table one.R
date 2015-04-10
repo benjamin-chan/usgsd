@@ -3,6 +3,16 @@
 # 2004 + 2006
 # time series + pilot
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/ANES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20National%20Election%20Studies/replicate%20table%20one.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # this r script will replicate each of the statistics from the anes publication
 # http://www.electionstudies.org/resources/papers/nes012492.pdf#page=25
 # column labeled "design-consistent with published strata"
@@ -56,12 +66,12 @@
 # install.packages( "survey" )
 
 
-require(survey)  # load survey package (analyzes complex design surveys)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # by default, R will crash if a primary sampling unit (psu) has a single observation
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 # by uncommenting this line:
 # options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN

@@ -2,6 +2,15 @@
 # panel study of income dynamics
 # individual cross-year and two family files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/PSID/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Panel%20Study%20of%20Income%20Dynamics/longitudinal%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # note that the tutorials posted on the panel study of income dynamics website are out-of-date.
 # the analysis examples below use tutorial #3 as a guide, but to not match those published numbers exactly,
@@ -55,10 +64,10 @@
 # install.packages( "survey" )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
+library(survey)		# load survey package (analyzes complex design surveys)
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

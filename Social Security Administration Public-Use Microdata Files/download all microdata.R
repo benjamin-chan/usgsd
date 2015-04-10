@@ -2,6 +2,17 @@
 # social security administration public-use microdata files
 # 2001, 2004, and 2006 benefits, earnings, oasdi, and ssi files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/SSAPUMF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Social%20Security%20Administration%20Public-Use%20Microdata%20Files/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -28,6 +39,18 @@
 
 # setwd( "C:/My Directory/SSAPUMF/" )
 
+
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
+
 # initiate two temporary files and a temporary directory
 tf <- tempfile() ; tf2 <- tempfile() ; td <- tempdir()
 
@@ -40,9 +63,9 @@ tf <- tempfile() ; tf2 <- tempfile() ; td <- tempdir()
 # This SSI Public-Use Microdata File consists of a 5 percent random, representative sample of records of SSI recipients who received a federal SSI payment in December 2001. All information in this file is as of December 2001; in particular, the payment amounts refer to the payment in that month. 
 
 # data dictionary
-# http://www.ssa.gov/policy/docs/microdata/ssr/ssr_dictionary.pdf
+# http://www.socialsecurity.gov/policy/docs/microdata/ssr/ssr_dictionary.pdf
 
-fn <- "http://www.ssa.gov/policy/docs/microdata/ssr/ssr_csv.zip"
+fn <- "http://www.socialsecurity.gov/policy/docs/microdata/ssr/ssr_csv.zip"
 
 # download and unzip the file onto the local computer
 download.file( fn , tf , mode = 'wb' )
@@ -60,7 +83,7 @@ names( ssi01 ) <- tolower( names( ssi01 ) )
 
 # confirm approximately 320,000 records
 # as specified under `content and sample design` on this page
-# http://www.ssa.gov/policy/docs/microdata/ssr/index.html
+# http://www.socialsecurity.gov/policy/docs/microdata/ssr/index.html
 
 nrow( ssi01 )
 
@@ -85,9 +108,9 @@ file.remove( z , tf )
 # This OASDI Public-Use Microdata File consists of a 1 percent random, representative sample of records of OASDI beneficiaries who were entitled to receive a Social Security (OASDI) benefit for December 2001. All information in this file is as of December 2001; in particular, the benefit amounts refer to the benefit for that month. 
 
 # data dictionary
-# http://www.ssa.gov/policy/docs/microdata/mbr/mbr_dictionary.pdf
+# http://www.socialsecurity.gov/policy/docs/microdata/mbr/mbr_dictionary.pdf
 
-fn <- "http://www.ssa.gov/policy/docs/microdata/mbr/mbr_csv.zip"
+fn <- "http://www.socialsecurity.gov/policy/docs/microdata/mbr/mbr_csv.zip"
 
 # download and unzip the file onto the local computer
 download.file( fn , tf , mode = 'wb' )
@@ -108,7 +131,7 @@ oasdi01[ , names( oasdi01 ) %in% c( 'lemba' , 'samba' ) ] <-
 
 # confirm approximately 460,000 records
 # as specified under `content and sample design` on this page
-# http://www.ssa.gov/policy/docs/microdata/mbr/index.html
+# http://www.socialsecurity.gov/policy/docs/microdata/mbr/index.html
 
 nrow( oasdi01 )
 
@@ -135,7 +158,7 @@ file.remove( z , tf )
 # The Benefits and Earnings Public-Use File, 2004, consists of a 1 percent random, representative sample of records of Old-Age, Survivors, and Disability Insurance beneficiaries who were entitled to receive a Social Security (OASDI) benefit for December 2004, and all benefit information is as of December 2004. This file consists of two separate, linkable components—one with benefit information (the benefit subfile) and one with earnings information (the earnings subfile). Each record on these subfiles has a unique identifier that allows each earnings record to be linked to a corresponding benefit record. 
 
 # benefits
-fn <- "http://www.ssa.gov/policy/docs/microdata/earn/benefits04text.zip"
+fn <- "http://www.socialsecurity.gov/policy/docs/microdata/earn/benefits04text.zip"
 
 # download and unzip the file onto the local computer
 download.file( fn , tf , mode = 'wb' )
@@ -162,7 +185,7 @@ bene04[ , names( bene04 ) %in% c( 'lemba' , 'samba' ) ] <-
 
 # confirm exactly 473,366 records
 # as specified on pdf page 10 of the earnings dictionary
-# http://www.ssa.gov/policy/docs/microdata/earn/earn_dictionary.pdf#page=10
+# http://www.socialsecurity.gov/policy/docs/microdata/earn/earn_dictionary.pdf#page=10
 nrow( bene04 )
 
 
@@ -181,7 +204,7 @@ file.remove( z , tf )
 
 
 # earnings
-fn <- "http://www.ssa.gov/policy/docs/microdata/earn/earnings04text.zip"
+fn <- "http://www.socialsecurity.gov/policy/docs/microdata/earn/earnings04text.zip"
 
 # download and unzip the file onto the local computer
 download.file( fn , tf , mode = 'wb' )
@@ -224,7 +247,7 @@ earn04 <-
 
 # confirm exactly 472,511 records
 # as specified on pdf page 10 of the earnings dictionary
-# http://www.ssa.gov/policy/docs/microdata/earn/earn_dictionary.pdf#page=10
+# http://www.socialsecurity.gov/policy/docs/microdata/earn/earn_dictionary.pdf#page=10
 nrow( earn04 )
 
 
@@ -255,7 +278,7 @@ file.remove( z , tf )
 # The 2006 Earnings Public-Use File (EPUF) is a systematic 1 percent random sample of all Social Security numbers issued prior to January 1, 2007. With a few minor exceptions, all of the values for the data fields in this file are from the Summary Segment of SSA’s Master Earnings File, the administrative file used to determine an individual’s eligibility status under the Social Security program and the amount of benefits paid out.
 
 # 2006 demographics and earnings
-fn <- "http://www.ssa.gov/policy/docs/microdata/epuf/epuf2006_csv_files.zip"
+fn <- "http://www.socialsecurity.gov/policy/docs/microdata/epuf/epuf2006_csv_files.zip"
 
 # download and unzip the file onto the local computer
 download.file( fn , tf , mode = 'wb' )
@@ -273,7 +296,7 @@ names( ann06 ) <- tolower( names( ann06 ) )
 
 # confirm exactly 60,326,474 records
 # as specified on pdf page 1 of the earnings dictionary
-# http://www.ssa.gov/policy/docs/microdata/epuf/epuf_dictionary.pdf
+# http://www.socialsecurity.gov/policy/docs/microdata/epuf/epuf_dictionary.pdf
 nrow( ann06 )
 
 
@@ -318,9 +341,9 @@ demo06 <- read.csv( demo.file )
 # convert all column names to lowercase
 names( demo06 ) <- tolower( names( demo06 ) )
 
-# confirm exactly 4,84,254 records
+# confirm exactly 4,384,254 records
 # as specified on pdf page 1 of the earnings dictionary
-# http://www.ssa.gov/policy/docs/microdata/epuf/epuf_dictionary.pdf
+# http://www.socialsecurity.gov/policy/docs/microdata/epuf/epuf_dictionary.pdf
 nrow( demo06 )
 
 # save this data.frame into an R data file (.rda) on the local disk

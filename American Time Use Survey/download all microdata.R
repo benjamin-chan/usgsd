@@ -1,6 +1,17 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # american time use survey
-# 2003 - 2012
+# 2003 - 2013
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/ATUS/" )
+# years.to.download <- c( 2003:2013 , "0312" , "0313" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20Time%20Use%20Survey/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -18,12 +29,12 @@
 
 
 ################################################################
-# Analyze the 2003 - 2012 American Time Use Survey file with R #
+# Analyze the 2003 - 2013 American Time Use Survey file with R #
 ################################################################
 
 
 # set your working directory.
-# the ATUS 2003 - 2012 data files will be stored here
+# the ATUS 2003 - 2013 data files will be stored here
 # after downloading and importing them.
 # use forward slashes instead of back slashes
 
@@ -37,15 +48,18 @@
 
 # uncomment this line to download all available data sets
 # uncomment this line by removing the `#` at the front
-# years.to.download <- c( 2003:2012 , "0307" , "0309" , "0310" , "0311" , "0312" )
+# years.to.download <- c( 2003:2013 , "0312" , "0313" )
 
 # uncomment this line to only download 2010
 # years.to.download <- 2010
 
 # uncomment this line to download, for example,
-# 2005 and 2009-2011 and the '03-'11 multi-year file
-# years.to.download <- c( 2005 , 2009:2011 , "0311" )
+# 2005 and 2009-2011 and the '03-'12 multi-year file
+# years.to.download <- c( 2005 , 2009:2011 , "0312" )
 
+
+# remove the # in order to run this install.packages line only once
+# install.packages( "downloader" )
 
 
 ############################################
@@ -55,52 +69,23 @@
 # program start #
 # # # # # # # # #
 
-# specify the ftp path to the american time use survey on
+library(downloader)			# downloads and then runs the source() function on scripts from github
+
+# specify the http path to the american time use survey on
 # the bureau of labor statistics' website
-ftp.dir <- "ftp://ftp.bls.gov/pub/special.requests/tus/"
+http.dir <- "http://www.bls.gov/tus/special.requests/"
 
 # create a temporary file
 tf <- tempfile()
 
-# warning: this might behave differently on non-windows systems
-# warning: this command must be run before any other
-# internet-accessing lines in the session
-setInternet2(TRUE)
-# you also might need administrative rights
-# on your computer to run `setInternet2`
 
-# download the contents of the ftp directory
-# to the temporary file
-download.file( ftp.dir , tf )
-
-# read the contents of that temporary file
-# into working memory (a character object called `txt`)
-txt <- readLines( tf )
-# if the object `txt` contains the ftp's contents,
-# you're cool.  otherwise, maybe look at this discussion
-# http://stackoverflow.com/questions/5227444/recursively-ftp-download-then-extract-gz-files
-# ..and tell me what you find.
-
-# keep only lines with a link to data files
-txt <- txt[ grep( "A HREF=\"/pub/special.requests/tus/" , txt ) ]
-
-# isolate the zip filename #
-
-# first, remove everything before the `special.requests/tus/`..
-txt <- sapply( strsplit( txt , "/pub/special.requests/tus/" ) , "[[" , 2 )
-
-# ..second, remove everything after the `.zip`
-all.files.on.ftp <- sapply( strsplit( txt , '.zip\">' ) , "[[" , 1 )
-
-# now you've got all the basenames
-# in the object `all.files.on.ftp`
-
-# remove all `lexicon` files.
-# you can download a specific year
-# for yourself if ya want.
-all.files.on.ftp <-
-	all.files.on.ftp[ !grepl( 'lexiconwex' , all.files.on.ftp ) ]
-
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 # begin looping through every atus year
@@ -111,20 +96,55 @@ for ( year in years.to.download ){
 	# within your current working directory
 	dir.create( paste0( "./" , year ) , showWarnings = FALSE )
 
-	# find all zipped files specific to
-	# the current year of data
-	files.this.year <- 
-		all.files.on.ftp[ grep( year , all.files.on.ftp ) ]
-		
+	# figure out the website listing all available zipped files
+	http.page <- 
+		paste0( 
+			"http://www.bls.gov/tus/datafiles_" ,
+			year ,
+			".htm" 
+		)
+
+	# download the contents of the website
+	# to the temporary file
+	download.cache( http.page , tf )
+
+	# read the contents of that temporary file
+	# into working memory (a character object called `txt`)
+	txt <- readLines( tf )
+	# if the object `txt` contains the page's contents,
+	# you're cool.  otherwise, maybe look at this discussion
+	# http://stackoverflow.com/questions/5227444/recursively-ftp-download-then-extract-gz-files
+	# ..and tell me what you find.
+
+	# keep only lines with a link to data files
+	txt <- txt[ grep( ".zip" , txt , fixed = TRUE ) ]
+
+	# isolate the zip filename #
+
+	# first, remove everything before the `special.requests/tus/`..
+	txt <- sapply( strsplit( txt , "/tus/special.requests/" ) , "[[" , 2 )
+
+	# ..second, remove everything after the `.zip`
+	all.files.on.page <- sapply( strsplit( txt , '.zip\">' ) , "[[" , 1 )
+
+	# now you've got all the basenames
+	# in the object `all.files.on.page`
+
+	# remove all `lexicon` files.
+	# you can download a specific year
+	# for yourself if ya want.
+	all.files.on.page <-
+		all.files.on.page[ !grepl( 'lexiconwex' , all.files.on.page ) ]
+
 	# loop through each of those year-specific files..
-	for ( curFile in files.this.year ){
+	for ( curFile in all.files.on.page ){
 
 		# build a character string containing the
 		# full filepath to the current zipped file
-		fn <- paste0( ftp.dir , curFile , ".zip" )
+		fn <- paste0( http.dir , curFile , ".zip" )
 		
 		# download the file
-		download.file( fn , tf , mode = 'wb' )
+		download.cache( fn , tf , mode = 'wb' )
 		
 		# extract the contents of the zipped file
 		# into the current year-specific directory

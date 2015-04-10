@@ -1,6 +1,18 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # national plan and provider enumeration system files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# options( encoding = "windows-1252" )			# # only macintosh and *nix users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `./nppes.sh` instead
+# source_url( "https://raw.githubusercontent.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/replicate%20cms%20state%20counts.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -50,12 +62,39 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
+
 # # # # # # # # # # # # # # #
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
 
 
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
 
 # after running the r script above, users should have handy a few lines
@@ -69,7 +108,7 @@ require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `./nppes.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -80,7 +119,7 @@ dbname <- "nppes"
 dbport <- 50006
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # end of lines of code to hold on to for all other nppes monetdb analyses #
 ###########################################################################
@@ -141,69 +180,6 @@ tail( z )
 # into your current working directory 
 write.csv( z , "counts by state.csv" )
 	
-
-
-# # # # # # # # # # # # # # # #
-# create a monet.frame object #
-# # # # # # # # # # # # # # # #
-
-# initiate a monet.frame object,
-# which in many ways behaves
-# like an R data.frame
-x <- monet.frame( db , 'npi' )
-# for more detail about and
-# example usage cases of monet.frame objects,
-# type ?monet.frame into the console
-
-
-# note: the entire nppes data table is too large to entirely load onto a computer with 4GB of RAM
-# however, pulling only certain columns into your computer's RAM at once should load properly
-
-
-
-# extraction based on column _numbers_ #
-
-# create an R data.frame object `y` from the monet.frame object `x`
-# pulling the first ten columns of the data table
-# and removing the RAM-related warning.
-y <- 
-	as.data.frame( 
-		x[ , c( 1:2 , 31:32 , 37 ) ] , 
-		warnSize = FALSE 
-	)
-
-# from here, a table comparable to the object `z` above
-# can simply be printed directly to the screen
-# using the base R `table` function
-table( y$provider_business_practice_location_address_state_name )
-
-# remove `y` from RAM
-rm( y ) ; gc()
-
-
-# extraction based on column _names_ #
-
-vars.to.keep <- 
-	c( 'npi' , 'entity_type_code' , 'provider_business_practice_location_address_city_name' ,
-		'provider_business_practice_location_address_state_name' , 'provider_enumeration_date' )
-
-# create an R data.frame object `y` from the monet.frame object `x`
-# pulling the first ten columns of the data table
-# and removing the RAM-related warning.
-y <- 
-	as.data.frame( 
-		x[ , vars.to.keep ] , 
-		warnSize = FALSE 
-	)
-
-# from here, a table comparable to the object `z` above
-# can simply be printed directly to the screen
-# using the base R `table` function
-table( y$provider_business_practice_location_address_state_name )
-
-# remove `y` from RAM
-rm( y ) ; gc()
-
 
 ###########################################################################
 # end of lines of code to hold on to for all other nppes monetdb analyses #

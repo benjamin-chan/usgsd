@@ -2,6 +2,16 @@
 # basic stand alone medicare claims public use files
 # 2008 files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/BSAPUF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20download%20all%20csv%20files.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -30,7 +40,7 @@
 # setwd( "C:/My Directory/BSAPUF/" )
 
 # remove the # in order to run this install.packages line only once
-# install.packages( "httr" )
+# install.packages( "downloader" )
 
 # no need to edit anything below this line #
 
@@ -40,7 +50,16 @@
 # # # # # # # # #
 
 
-require(httr)		# load httr package (downloads files from the web, with SSL and cookies)
+library(downloader)	# downloads and then runs the source() function on scripts from github
+
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 # create and set the working directory to a year-specific folder #
@@ -50,9 +69,6 @@ current.year.folder <- normalizePath( paste0( getwd() , "/2008" ) )
 
 # create a "2008" folder inside the current working directory
 dir.create( current.year.folder )
-
-# change the current working directory to that folder
-setwd( current.year.folder )
 
 
 # set the location of the two possible ftp sites containing the public use files
@@ -105,40 +121,25 @@ rxp <- "2008_PD_Profiles_PUF.zip"
 # combine all zip file names into a single character vector
 all.files <- c( inpatient , dme , pde , hospice , carrier , hha , outpatient , snf , cc , ipbs , rxp )
 
-# initiate the 'resp' object (just in case the all.files order changes)
-resp <- data.frame( status_code = 1 )
-
 # loop through all zip filenames
 for ( zf in all.files ){
 
-	# attempt two commands, store the result in an object called 'prob'
-	prob <-
-		try( 
-			{
-				# attempt to download the file from the https ftp site..
-				resp <- GET( paste0( ftp.l , zf ) )
-				
-				# ..and save the file as a temporary file
-				writeBin( content( resp , "raw" ) , tf )
-			} , 
-			# silent = TRUE tells the try() function not to crash the loop if the two commands above throw an error
-			silent = TRUE
-		)
+	# try the download.
+	other.attempt <- try( download.cache( paste0( ftp.l , zf ) , tf , FUN = download , attempts = 3 ) , silent = TRUE )
 	
-	if( 
+	# if there is really nothing in the file..
+	if( class( other.attempt ) == 'try-error' || length( readLines( tf , n = 10 ) ) == 0 ){
+	
+		# switch to the other url prefix
 		
-		# if the two commands above did throw an error, instead attempt this download.file() function,
-		# which attempts to download the same zip file from the other http site
-		class( prob ) == "try-error" | 
-		
-		# or if they didn't throw an error but contains a 404 page not found status code
-		( resp$status_code == 404 )
-		
-		# then try a standard download.file() call, using the normal http:// website
-	) download.file( paste0( ftp.d , zf ) , tf , mode = 'wb' )
+		# so long as the download didn't complete, keep trying.
+		download.cache( paste0( ftp.d , zf ) , tf , FUN = download , attempts = 3 )
+
+	# but if something (an incomplete file) was downloaded..
+	}
 	
 	# unzip the downloaded zip file into the current working directory
-	unzip( tf )
+	unzip( tf , exdir = current.year.folder )
 	
 	# and delete the temporary zip file from the local disk
 	file.remove( tf )

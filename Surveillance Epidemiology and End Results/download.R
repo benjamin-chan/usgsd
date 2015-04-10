@@ -1,6 +1,18 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # surveillance epidemiology and end results
-# 1973 through 2010
+# 1973 and beyond
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# your.username <- "username"
+# your.password <- "password"
+# library(downloader)
+# setwd( "C:/My Directory/SEER/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Surveillance%20Epidemiology%20and%20End%20Results/download.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -36,8 +48,8 @@
 # once they've e-mailed you a login and password,
 # fill them in below, and the download script will work
 
-your.username <- "username"
-your.password <- "password"
+# your.username <- "username"
+# your.password <- "password"
 
 # this download automation script will not work without the above lines filled in.
 # if the your.username and your.password lines above are not filled in,
@@ -71,11 +83,28 @@ your.password <- "password"
 # # # # # # # # #
 
 
-require(downloader)		# downloads and then runs the source() function on scripts from github
+library(downloader)		# downloads and then runs the source() function on scripts from github
 
 
 # create a temporary file on your local disk
 tf <- tempfile()
+
+
+# find the seerstat page containing the link to the latest zipped file
+ssp <- readLines( "http://seer.cancer.gov/data/options.html" )
+
+
+# find the latest filepath
+fp <- 
+	# extract just the https:// address
+	gsub( '(.*)\"https://(.*)\\.(zip|ZIP)\"(.*)' , "\\2.\\3" , 
+		# find the line with the zipped file on it
+		grep( "\\.(zip|ZIP)" , ssp , value = TRUE ) 
+	)
+
+# there can be only one
+stopifnot( length( fp ) == 1 )
+
 
 # build the https:// path to the seer ascii data file,
 # which includes the login information you should have entered above
@@ -85,9 +114,11 @@ seer.url <-
 		your.username ,
 		":" ,
 		your.password ,
-		"@seerstat.imsweb.com/.cd_images/SEER_1973_2010_TEXTDATA.d04242013.zip"
+		"@" , 
+		fp
 	)
 
+	
 # download the zipped file to the temporary file
 download( seer.url , tf )
 

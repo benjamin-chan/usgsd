@@ -2,6 +2,16 @@
 # national health and nutrition examination survey
 # 2009-2010 demographics and laboratory files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NHANES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20and%20Nutrition%20Examination%20Survey/2009-2010%20interview%20plus%20laboratory%20-%20download%20and%20analyze.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # the centers for disease control & prevention have published a brief on high cholesterol at:
 # http://www.cdc.gov/nchs/data/databriefs/db92.pdf
 
@@ -47,12 +57,12 @@ options( digits = 15 )
 # install.packages( "survey" )
 
 
-require(foreign) # load foreign package (converts data files into R)
-require(survey)  # load survey package (analyzes complex design surveys)
+library(foreign) # load foreign package (converts data files into R)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

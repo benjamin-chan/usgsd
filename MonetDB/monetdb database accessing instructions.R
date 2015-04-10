@@ -11,7 +11,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
 
 
@@ -20,7 +20,7 @@ require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 # lines of code to hold on to for all other `test` monetdb analyses #
 
 # first: specify your batfile.  again, mine looks like this:
-batfile <- "C:/My Directory/MonetDB/test.bat"
+batfile <- "C:/My Directory/MonetDB/test.bat"		# # note for mac and *nix users: `test.bat` might be `test.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -31,7 +31,7 @@ dbname <- "test"
 dbport <- 50000
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # # # # run your analysis commands # # # #
 
@@ -85,13 +85,13 @@ dbListFields( db , 'x' )
 # make a new column in the monetdb table #
 
 # create a kilometers per liter column
-dbSendUpdate( db , 'alter table x add column kpl double' )
+dbSendQuery( db , 'alter table x add column kpl double' )
 # note: the above command just adds an empty column.
 # the following command actually fills it with data
-dbSendUpdate( db , 'update x set kpl = mpg * 0.425144' )
+dbSendQuery( db , 'update x set kpl = mpg * 0.425144' )
 # one kilometer per liter equals ~0.4 miles per gallon
 
-# in sum: use dbSendUpdate() to make changes
+# in sum: use dbSendQuery() to make changes
 # to a table within a database
 
 # end of changes to the monetdb table #
@@ -119,7 +119,7 @@ new.variable.name <- 'wtcat'			# new variable to create
 # step one: add the column
 
 ( first.command <- paste( "ALTER TABLE x ADD" , new.variable.name , "double" ) )
-dbSendUpdate( db , first.command )
+dbSendQuery( db , first.command )
 	
 
 # step two: loop through each cutpoint (except the last)
@@ -165,7 +165,7 @@ for ( i in seq( length( cutpoints ) - 1 ) ){
 	
 	# step four: send the character string command to the database
 	
-	dbSendUpdate( db , second.command )		# recode wt >= cutpoints[ i ] AND wt < cutpoints[ i + 1 ] to wtcat = i
+	dbSendQuery( db , second.command )		# recode wt >= cutpoints[ i ] AND wt < cutpoints[ i + 1 ] to wtcat = i
 
 }
 

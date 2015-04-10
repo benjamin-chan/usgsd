@@ -3,6 +3,18 @@
 # public use microdata sample
 # 1990 , 2000
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
+# load( 'C:/My Directory/PUMS/pums_2000_5_m.rda' )	# analyze the 2000 5% pums file
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/United%20States%20Decennial%20Census%20Public%20Use%20Microdata%20Sample/2000%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -28,6 +40,20 @@
 ###################################################################################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
 
 # # # # # # # # # # # # # #
 # warning warning warning #
@@ -61,7 +87,7 @@
 # svytotal( ~variable , design , se = TRUE )
 
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
 
 
 # after running the r script above, users should have handy a few lines
@@ -74,7 +100,7 @@ require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surv
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -85,7 +111,7 @@ dbname <- "pums"
 dbport <- 50010
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
@@ -96,7 +122,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # connected to the 2000 single-year table
 
 # sqlite database-backed survey objects are described here: 
-# http://faculty.washington.edu/tlumley/survey/svy-dbi.html
+# http://r-survey.r-forge.r-project.org/survey/svy-dbi.html
 # monet database-backed survey objects are similar, but:
 # the database engine is, well, blazingly faster
 # the setup is kinda more complicated (but all done for you)
@@ -120,13 +146,8 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # note: this r data file should already contain the 2000 5% design
 
 
-# uncomment the correct line by removing the `#` at the front..
-
-# connect the complex sample designs to the monet database #
-# pums.design <- open( pums.1990.1.m.design , driver = MonetDB.R() )	# 1990 1% design
-# pums.design <- open( pums.1990.5.m.design , driver = MonetDB.R() )	# 1990 5% design
-# pums.design <- open( pums.2000.1.m.design , driver = MonetDB.R() )	# 2000 1% design
-# pums.design <- open( pums.2000.5.m.design , driver = MonetDB.R() )	# 2000 5% design
+# connect the complex sample design to the monet database #
+pums.design <- open( pums.m.design , driver = MonetDB.R() , wait = TRUE )	# merged design
 
 
 
@@ -188,8 +209,30 @@ dbGetQuery( db , "SELECT state , SUM( pweight ) AS sum_weights FROM pums_2000_5_
 # average age - nationwide
 svymean( ~age , pums.design )
 
-# by state
-svymean( ~age , pums.design , byvar = ~state )
+# try this by state..
+problem <- try( svymean( ~age , pums.design , byvar = ~state ) , silent = TRUE )
+
+# ..but:
+if( class( problem ) == 'try-error' ) print( "this resulted in an error because it's too big of a query" )
+
+# break it up into smaller queries
+all.states <- dbGetQuery( db , 'select distinct state from pums_2000_5_m' )[ , 1 ]
+
+# loop through each state..
+for ( this.state in all.states ){
+
+	# construct the entire query as a string (this is generally not recommended)
+	svy.string <- 
+		paste( 
+			"svymean( ~ age , subset( pums.design , ( state ==" ,
+			this.state ,
+			") ) )"
+		)
+		
+	# manually evaluate the string
+	print( eval( parse( text = svy.string ) ) )
+
+}
 
 
 # calculate the distribution of a categorical variable #
@@ -205,8 +248,28 @@ svymean( ~age , pums.design , byvar = ~state )
 # percent married - nationwide
 svymean( ~marstat , pums.design )
 
-# by state
-data.frame( svymean( ~marstat , pums.design , byvar = ~state ) )
+# by state..
+problem <- try( svymean( ~marstat , pums.design , byvar = ~state ) , silent = TRUE )
+
+# ..but:
+if( class( problem ) == 'try-error' ) print( "this resulted in an error because it's too big of a query" )
+
+
+# loop through each state..
+for ( this.state in all.states ){
+
+	# construct the entire query as a string (this is generally not recommended)
+	svy.string <- 
+		paste( 
+			"svymean( ~ marstat , subset( pums.design , ( state ==" ,
+			this.state ,
+			") ) )"
+		)
+		
+	# manually evaluate the string
+	print( eval( parse( text = svy.string ) ) )
+
+}
 
 
 # calculate the median and other percentiles #

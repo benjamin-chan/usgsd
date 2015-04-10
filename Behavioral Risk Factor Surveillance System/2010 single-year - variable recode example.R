@@ -2,6 +2,18 @@
 # behavioral risk factor surveillance system
 # 2010
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
+# load( 'C:/My Directory/BRFSS/b2010 design.rda' )	# analyze the 2010 single-year brfss
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Behavioral%20Risk%20Factor%20Surveillance%20System/2010%20single-year%20-%20variable%20recode%20example.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -34,13 +46,29 @@
 # # # # # # # # # # # # # # #
 
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
 # remove the # in order to run this install.packages line only once
 # install.packages( "stringr" )
 
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
-require(stringr) 		# load stringr package (manipulates character strings easily)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(stringr) 		# load stringr package (manipulates character strings easily)
 
 
 # after running the r script above, users should have handy a few lines
@@ -53,7 +81,7 @@ require(stringr) 		# load stringr package (manipulates character strings easily)
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -64,7 +92,7 @@ dbname <- "brfss"
 dbport <- 50004
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
@@ -75,7 +103,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # connected to the 2010 single-year table
 
 # however, making any changes to the data table downloaded directly from the census bureau
-# currently requires directly accessing the table using dbSendUpdate() to run sql commands
+# currently requires directly accessing the table using dbSendQuery() to run sql commands
 
 
 # note: recoding (writing) variables in monetdb often takes much longer
@@ -94,11 +122,11 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # then make a copy so you don't lose the pristine original.    #
 
 # the command above
-# db <- dbConnect( MonetDB.R() , monet.url )
+# db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 # has already connected the current instance of r to the monet database
 
 # now simply copy you'd like to recode into a new table
-dbSendUpdate( db , "CREATE TABLE recoded_b2010 AS SELECT * FROM b2010 WITH DATA" )
+dbSendQuery( db , "CREATE TABLE recoded_b2010 AS SELECT * FROM b2010 WITH DATA" )
 # this action protects the original 'b2010' table from any accidental errors.
 # at any point, we can delete this recoded copy of the data table using the command..
 # dbRemoveTable( db , "recoded_b2010" )
@@ -114,10 +142,10 @@ dbSendUpdate( db , "CREATE TABLE recoded_b2010 AS SELECT * FROM b2010 WITH DATA"
 
 # add a new column.  call it, oh i don't know, drinks_per_month
 # since it's actually a categorical variable, make it VARCHAR( 255 )
-dbSendUpdate( db , "ALTER TABLE recoded_b2010 ADD COLUMN drinks_per_month VARCHAR( 255 )" )
+dbSendQuery( db , "ALTER TABLE recoded_b2010 ADD COLUMN drinks_per_month VARCHAR( 255 )" )
 
 # if you wanted to create a numeric variable, substitute VARCHAR( 255 ) with DOUBLE PRECISION like this:
-# dbSendUpdate( db , "ALTER TABLE recoded_b2010 ADD COLUMN drinks_per_monthx DOUBLE PRECISION" )
+# dbSendQuery( db , "ALTER TABLE recoded_b2010 ADD COLUMN drinks_per_monthx DOUBLE PRECISION" )
 # ..but then drinks_per_month would have to be be numbers (1 - 5) instead of the strings shown below ('01' - '05')
 
 
@@ -126,11 +154,11 @@ dbSendUpdate( db , "ALTER TABLE recoded_b2010 ADD COLUMN drinks_per_month VARCHA
 # therefore, this first command will identify these individuals using the WHERE <varname> IS NULL clause
 
 
-dbSendUpdate( db , "UPDATE recoded_b2010 SET drinks_per_month = '01' WHERE xdrnkmo3 = 0" )
-dbSendUpdate( db , "UPDATE recoded_b2010 SET drinks_per_month = '02' WHERE xdrnkmo3 >= 1 AND xdrnkmo3 < 11" )
-dbSendUpdate( db , "UPDATE recoded_b2010 SET drinks_per_month = '03' WHERE xdrnkmo3 >= 11 AND xdrnkmo3 < 26" )
-dbSendUpdate( db , "UPDATE recoded_b2010 SET drinks_per_month = '04' WHERE xdrnkmo3 >= 26 AND xdrnkmo3 < 51" )
-dbSendUpdate( db , "UPDATE recoded_b2010 SET drinks_per_month = '05' WHERE xdrnkmo3 >= 51" )
+dbSendQuery( db , "UPDATE recoded_b2010 SET drinks_per_month = '01' WHERE xdrnkmo3 = 0" )
+dbSendQuery( db , "UPDATE recoded_b2010 SET drinks_per_month = '02' WHERE xdrnkmo3 >= 1 AND xdrnkmo3 < 11" )
+dbSendQuery( db , "UPDATE recoded_b2010 SET drinks_per_month = '03' WHERE xdrnkmo3 >= 11 AND xdrnkmo3 < 26" )
+dbSendQuery( db , "UPDATE recoded_b2010 SET drinks_per_month = '04' WHERE xdrnkmo3 >= 26 AND xdrnkmo3 < 51" )
+dbSendQuery( db , "UPDATE recoded_b2010 SET drinks_per_month = '05' WHERE xdrnkmo3 >= 51" )
 
 
 
@@ -186,7 +214,7 @@ brfss.recoded.design <-
 
 
 # sqlite database-backed survey objects are described here: 
-# http://faculty.washington.edu/tlumley/survey/svy-dbi.html
+# http://r-survey.r-forge.r-project.org/survey/svy-dbi.html
 # monet database-backed survey objects are similar, but:
 # the database engine is, well, blazingly faster
 # the setup is kinda more complicated (but all done for you)
@@ -225,8 +253,8 @@ monetdb.server.stop( pid )
 
 # open r back up
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)			# load the MonetDB.R package (connects r to a monet database)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)			# load the MonetDB.R package (connects r to a monet database)
 
 # run your..
 # lines of code to hold on to for all other brfss monetdb analyses #
@@ -243,7 +271,7 @@ require(MonetDB.R)			# load the MonetDB.R package (connects r to a monet databas
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -254,13 +282,13 @@ dbname <- "brfss"
 dbport <- 50004
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
 
 # connect the recoded complex sample design to the monet database #
-brfss.r <- open( brfss.recoded.design , driver = MonetDB.R() )	# recoded
+brfss.r <- open( brfss.recoded.design , driver = MonetDB.R() , wait = TRUE )	# recoded
 
 # ..and now you can exactly match the monthly alcohol consumption categories provided by the cdc's web-enabled analysis tool at..
 # https://github.com/ajdamico/usgsd/blob/master/Behavioral%20Risk%20Factor%20Surveillance%20System/WEAT%202010%20Alcohol%20Consumption%20by%20Gender%20-%20Crosstab%20Analysis%20Results.pdf?raw=true #

@@ -2,6 +2,18 @@
 # american community survey
 # 2011 person and household files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"		# # note for mac and *nix users: `acs.bat` might be `acs.sh` instead
+# load( 'C:/My Directory/ACS/acs2011_1yr.rda' )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20Community%20Survey/2011%20single-year%20-%20variable%20recode%20example.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -34,13 +46,29 @@
 # # # # # # # # # # # # # # #
 
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
 # remove the # in order to run this install.packages line only once
 # install.packages( "stringr" )
 
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
-require(stringr) 		# load stringr package (manipulates character strings easily)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(stringr) 		# load stringr package (manipulates character strings easily)
 
 
 # after running the r script above, users should have handy a few lines
@@ -53,7 +81,7 @@ require(stringr) 		# load stringr package (manipulates character strings easily)
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"
+# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"		# # note for mac and *nix users: `acs.bat` might be `acs.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -64,7 +92,7 @@ dbname <- "acs"
 dbport <- 50001
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
@@ -75,7 +103,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # connected to the 2011 single-year table
 
 # however, making any changes to the data table downloaded directly from the census bureau
-# currently requires directly accessing the table using dbSendUpdate() to run sql commands
+# currently requires directly accessing the table using dbSendQuery() to run sql commands
 
 
 # note: recoding (writing) variables in monetdb often takes much longer
@@ -94,11 +122,11 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # then make a copy so you don't lose the pristine original.  #
 
 # the command above
-# db <- dbConnect( MonetDB.R() , monet.url )
+# db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 # has already connected the current instance of r to the monet database
 
 # now simply copy you'd like to recode into a new table
-dbSendUpdate( db , "CREATE TABLE recoded_acs2011_1yr_m AS SELECT * FROM acs2011_1yr_m WITH DATA" )
+dbSendQuery( db , "CREATE TABLE recoded_acs2011_1yr_m AS SELECT * FROM acs2011_1yr_m WITH DATA" )
 # this action protects the original 'acs2011_1yr_m' table from any accidental errors.
 # at any point, we can delete this recoded copy of the data table using the command..
 # dbRemoveTable( db , "recoded_acs2011_1yr_m" )
@@ -114,27 +142,27 @@ dbSendUpdate( db , "CREATE TABLE recoded_acs2011_1yr_m AS SELECT * FROM acs2011_
 
 # add a new column.  call it, oh i don't know, agecat?
 # since it's actually a categorical variable, make it VARCHAR( 255 )
-dbSendUpdate( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecat VARCHAR( 255 )" )
+dbSendQuery( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecat VARCHAR( 255 )" )
 
 # if you wanted to create a numeric variable, substitute VARCHAR( 255 ) with DOUBLE PRECISION like this:
-# dbSendUpdate( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecatx DOUBLE PRECISION" )
+# dbSendQuery( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecatx DOUBLE PRECISION" )
 # ..but then agecat would have to be be numbers (1 - 13) instead of the strings shown below ('01' - '13')
 
 
 # by hand, you could set the values of the agecat column anywhere between '01' and '13'
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '01' WHERE agep >= 0 AND agep < 5" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '02' WHERE agep >= 5 AND agep < 10" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '03' WHERE agep >= 10 AND agep < 15" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '04' WHERE agep >= 15 AND agep < 20" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '05' WHERE agep >= 20 AND agep < 25" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '06' WHERE agep >= 25 AND agep < 35" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '07' WHERE agep >= 35 AND agep < 45" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '08' WHERE agep >= 45 AND agep < 55" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '09' WHERE agep >= 55 AND agep < 60" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '10' WHERE agep >= 60 AND agep < 65" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '11' WHERE agep >= 65 AND agep < 75" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '12' WHERE agep >= 75 AND agep < 85" )
-dbSendUpdate( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '13' WHERE agep >= 85 AND agep < 101" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '01' WHERE agep >= 0 AND agep < 5" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '02' WHERE agep >= 5 AND agep < 10" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '03' WHERE agep >= 10 AND agep < 15" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '04' WHERE agep >= 15 AND agep < 20" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '05' WHERE agep >= 20 AND agep < 25" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '06' WHERE agep >= 25 AND agep < 35" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '07' WHERE agep >= 35 AND agep < 45" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '08' WHERE agep >= 45 AND agep < 55" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '09' WHERE agep >= 55 AND agep < 60" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '10' WHERE agep >= 60 AND agep < 65" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '11' WHERE agep >= 65 AND agep < 75" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '12' WHERE agep >= 75 AND agep < 85" )
+dbSendQuery( db , "UPDATE recoded_acs2011_1yr_m SET agecat = '13' WHERE agep >= 85 AND agep < 101" )
 
 
 # quickly check your work by running a simple SELECT COUNT(*) command with sql
@@ -150,7 +178,7 @@ dbGetQuery( db , "SELECT agecat , agep , COUNT(*) as number_of_records from reco
 # with code you'll be able to modify a lot faster
 
 # remember, since it's actually a categorical variable, make the column type VARCHAR( 255 )
-dbSendUpdate( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecat2 VARCHAR( 255 )" )
+dbSendQuery( db , "ALTER TABLE recoded_acs2011_1yr_m ADD COLUMN agecat2 VARCHAR( 255 )" )
 
 
 # to automate things, just create a vector of each age bound
@@ -167,7 +195,7 @@ for ( i in 1:( length( agebounds ) - 1 ) ){
 	print( update.sql.string )
 	
 	# now actually run the sql string
-	dbSendUpdate( db , update.sql.string )
+	dbSendQuery( db , update.sql.string )
 }
 
 
@@ -226,7 +254,7 @@ acs.m.recoded.design <-
 
 
 # sqlite database-backed survey objects are described here: 
-# http://faculty.washington.edu/tlumley/survey/svy-dbi.html
+# http://r-survey.r-forge.r-project.org/survey/svy-dbi.html
 # monet database-backed survey objects are similar, but:
 # the database engine is, well, blazingly faster
 # the setup is kinda more complicated (but all done for you)
@@ -255,8 +283,8 @@ acs.m.recoded.design <-
 
 # open r back up
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
 
 # run your..
 # lines of code to hold on to for all other acs monetdb analyses #
@@ -269,7 +297,7 @@ require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database
 
 
 # connect the recoded complex sample design to the monet database #
-acs.r <- open( acs.m.recoded.design , driver = MonetDB.R() )	# recoded
+acs.r <- open( acs.m.recoded.design , driver = MonetDB.R() , wait = TRUE )	# recoded
 
 # ..and now you can exactly match the age categories provided by the census bureau at..
 # http://www.census.gov/acs/www/Downloads/data_documentation/pums/Estimates/pums_estimates_11.lst #

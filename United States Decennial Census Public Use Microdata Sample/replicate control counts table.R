@@ -3,6 +3,17 @@
 # public use microdata sample
 # 1990 , 2000
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/United%20States%20Decennial%20Census%20Public%20Use%20Microdata%20Sample/replicate%20control%20counts%20table.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -28,6 +39,20 @@
 ###################################################################################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
 
 #############################################################################
 # this script matches the unweighted and weighted totals shown in the       #
@@ -35,7 +60,7 @@
 #############################################################################
 
 
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
 
 # after running the r script above, users should have handy a few lines
 # to initiate and connect to the monet database containing all public use microdata sample tables
@@ -47,7 +72,7 @@ require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -58,7 +83,7 @@ dbname <- "pums"
 dbport <- 50010
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # # sql-based analysis starts here # # # # #

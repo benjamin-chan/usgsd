@@ -2,6 +2,16 @@
 # survey of income and program participation
 # 2008 panel 2010 calendar year
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SIPP/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Income%20and%20Program%20Participation/2008%20panel%20-%20full%20year%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -45,8 +55,8 @@
 # install.packages( c( "survey" , "RSQLite" ) )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 
 # increase size at which numbers are presented in scientific notation
@@ -79,16 +89,15 @@ db <- dbConnect( SQLite() , "SIPP08.db" )
 
 # uncomment this line to pull waves necessary for 2009 calendar year
 # and comment all other "waves <-" lines
-# waves <- 2:5 ; year <- 2009 ; mainwgt <- 'lgtcy1wt'
+# waves <- 2:5 ; year <- 2009 ; mainwgt <- 'lgtcy1wt' ; yrnum <- 1
 
 # uncomment this line to pull waves necessary for 2010 calendar year:
 # and comment all other "waves <-" lines
-waves <- 5:8 ; year <- 2010 ; mainwgt <- 'lgtcy2wt'
+waves <- 5:8 ; year <- 2010 ; mainwgt <- 'lgtcy2wt' ; yrnum <- 2
 
-# note: the 2011 single-year weight is not yet available!
 # uncomment this line to pull waves necessary for 2011 calendar year:
 # and comment all other "waves <-" lines
-# waves <- 8:11 ; year <- 2011 ; mainwgt <- 'lgtcy3wt'
+# waves <- 8:11 ; year <- 2011 ; mainwgt <- 'lgtcy3wt' ; yrnum <- 3
 
 
 
@@ -261,7 +270,10 @@ head( x )
 # access the appropriate main weight data #
 
 # run the sql query constructed above, save the resulting table in a new data frame called 'mw' that will now be stored in RAM
-mw <- dbGetQuery( db , "select * from wgtw7" )
+mw <- dbGetQuery( db , "select * from wgtw14" )
+
+# dump the `spanel` variable, which might otherwise sour up your merge
+mw$spanel <- NULL
 
 # look at the first six records of mw
 head( mw )
@@ -285,10 +297,13 @@ gc()
 # access the appropriate replicate weight data #
 
 # create a sql string containing the select command used to pull the calendar year replicate weights data file
-sql.string <- paste0( "select * from cy" , substr( year , 3 , 4 ) )
+sql.string <- paste0( "select * from cy" , yrnum )
 
 # run the sql query constructed above, save the resulting table in a new data frame called 'rw' that will now be stored in RAM
 rw <- dbGetQuery( db , sql.string )
+
+# dump the `spanel` variable, which might otherwise sour up your merge
+rw$spanel <- NULL
 
 # look at the first six records of rw
 head( rw )
@@ -655,7 +670,7 @@ confint( sipp.median.by( ~q1earn , ~one , z.15p.wearn ) , level = 0.9 )
 # note: these analysis examples are intentionally sparse
 # (to focus attention on the data manipulation part, which is much harder in sipp)
 # once the replicate-weighted survey design object has been created,
-# any of the features described on http://faculty.washington.edu/tlumley/survey/ can be used.
+# any of the features described on http://r-survey.r-forge.r-project.org/survey/ can be used.
 # all of the analysis examples shown for other survey data sets can be used on a sipp survey design too,
 # so be sure to check out other data sets on http://asdfree.com/ for more thorough examples
 

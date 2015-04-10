@@ -1,6 +1,17 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # surveillance epidemiology and end results
-# 1973 through 2010
+# 1973 through 2011
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/SEER/MonetDB/seer.bat	# # note for mac and *nix users: `seer.bat` might be `seer.sh` instead
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Surveillance%20Epidemiology%20and%20End%20Results/replicate%20case%20counts%20table.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -22,6 +33,22 @@
 ###################################################
 
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #########################################################################################################################################################
 # prior to running this replication script, the seer text files must be loaded into monetdb and stacked into a table called `x` in that database.       #
@@ -33,7 +60,7 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
 
 
 ###########################################################################################
@@ -41,7 +68,7 @@ require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/SEER/MonetDB/seer.bat"
+# batfile <- "C:/My Directory/SEER/MonetDB/seer.bat"	# # note for mac and *nix users: `seer.bat` might be `seer.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -52,7 +79,7 @@ dbname <- "seer"
 dbport <- 50008
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # # # # # # # # # # # # #
 # analysis start point  #
@@ -67,7 +94,7 @@ dbListFields( db , 'x' )
 
 
 # precisely match the record counts table available on the nci-seer website
-# http://seer.cancer.gov/manuals/TextData.cd1973-2010counts.pdf
+# http://seer.cancer.gov/manuals/TextData.cd1973-2011counts.pdf
 dbGetQuery( db , 'select tablename , count(*) from x group by tablename' )
 
 # note that 

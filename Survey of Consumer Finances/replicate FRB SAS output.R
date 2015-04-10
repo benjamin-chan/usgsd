@@ -4,6 +4,15 @@
 # as outlined in the e-mail correspondence "SCF PUF Net Worth Statistics and Standard Errors from FRB.pdf"
 # using 2010 public use microdata
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SCF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Consumer%20Finances/replicate%20FRB%20SAS%20output.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # note that these statistics come very close to the statistics and standard errors
 # calculated using the federal reserve's 2010 internal data set,
@@ -66,11 +75,11 @@
 # install.packages( c( 'mitools' , 'survey' , 'Hmisc' , 'downloader' ) )
 
 
-require(mitools)	# allows analysis of multiply-imputed survey data
-require(survey)		# load survey package (analyzes complex design surveys)
-require(downloader)	# downloads and then runs the source() function on scripts from github
-require(foreign) 	# load foreign package (converts data files into R)
-require(Hmisc) 		# load Hmisc package (loads a simple wtd.quantile function)
+library(mitools)	# allows analysis of multiply-imputed survey data
+library(survey)		# load survey package (analyzes complex design surveys)
+library(downloader)	# downloads and then runs the source() function on scripts from github
+library(foreign) 	# load foreign package (converts data files into R)
+library(Hmisc) 		# load Hmisc package (loads a simple wtd.quantile function)
 
 
 # load the 2010 survey of consumer finances into memory

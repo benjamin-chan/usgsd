@@ -3,6 +3,18 @@
 # 1948 through 2012
 # cumulative, time series, pilot, and special studies
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# your.username <- "username"
+# your.password <- "password"
+# library(downloader)
+# setwd( "C:/My Directory/ANES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20National%20Election%20Studies/download%20and%20import.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -67,7 +79,7 @@
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "Hmisc" , "httr" , "stringr" , "memisc" ) )
+# install.packages( c( "Hmisc" , "httr" , "stringr" , "memisc" , "haven" ) )
 
 # no need to edit anything below this line #
 
@@ -77,17 +89,17 @@
 # # # # # # # # #
 
 
-require(foreign) 	# load foreign package (converts data files into R)
-require(stringr)	# load stringr package (manipulates character strings easily)
-require(httr)		# load httr package (downloads files from the web, with SSL and cookies)
-require(Hmisc) 		# load Hmisc package (loads spss.get function)
-require(memisc)		# load memisc package (loads spss portable table import functions)
-
+library(foreign) 	# load foreign package (converts data files into R)
+library(stringr)	# load stringr package (manipulates character strings easily)
+library(httr)		# load httr package (downloads files from the web, with SSL and cookies)
+library(Hmisc) 		# load Hmisc package (loads spss.get function)
+library(memisc)		# load memisc package (loads spss portable table import functions)
+library(haven)		# load stata files after version 12
 
 # construct a list containing the pre-specified login information
 values <- 
     list(
-        "email" = your.email , 
+        "email" = your.username , 
         "pass" = your.password
     )
 
@@ -147,6 +159,9 @@ no.data.studies <-
 		'ANES 2010 Time Series Study' ,
 		'ANES 2006' ,
 		"Auxiliary File ANES 2004 Time Series and Panel Contextual File" ,
+		# these two are just full of broken links
+		"User-Contributed Data (for use with the ANES 1996 Time Series Study)" ,
+		"User-Contributed Data (for use with the ANES 1992 Time Series Study)" ,
 		# this last one isn't a no data study, but it needs a database to load into a computer with 4GB
 		# ..and it's not particularly useful
 		"Auxiliary File Supplemental (off-wave non-ANES) Data File"
@@ -163,9 +178,16 @@ files.to.download[[ "ANES 2010-2012 Evaluations of Government and Society Study"
 		"../data/2010_2012EGSS/ANES_EGSS4_preliminary_release_sav.zip" ,
 		"../data/2010_2012EGSS/ANES_EGSS3_preliminary_release_sav.zip" ,
 		"../data/2010_2012EGSS/ANES_EGSS2_preliminary_release_sav.zip" ,
-		"../data/2010_2012EGSS/anes2011_egss1dta.zip"
+		"../data/2010_2012EGSS/anes2010_2012egss1por.zip"
 	)
 
+files.to.download[[ "ANES Time Series Cumulative Data File" ]] <-
+		"../data/anes_timeseries_cdf/anes_timeseries_cdf_sav.zip"
+
+files.to.download[[ "ANES 2012 Time Series Study" ]] <-
+	"../data/anes_timeseries_2012/anes_timeseries_2012_sav.zip"
+	
+	
 # .por files only
 files.to.download[[ "ANES 2008-2009 Panel Study" ]] <-
 	"../data/2008_2009panel/anes2008_2009panelpor.zip"
@@ -224,7 +246,14 @@ for ( curStudy in seq( length( files.to.download ) ) ){
 			fp <- z[ grep( 'dta' , z ) ]
 		
 			# ..import that puppy
-			x <- read.dta( fp , convert.factors = FALSE )
+			x <- read_dta( fp[ 1 ] )
+			
+			# just check that it's the same file if there's more than
+			# one file included in the zipped file.
+			if( length( fp ) == 2 ) stopifnot( nrow( read_dta( fp[ 2 ] ) ) == nrow( x ) )
+		
+			# also confirm that there's a max of two files in the zipped file.
+			stopifnot( length( fp ) %in% 1:2 )
 		
 		} else {
 		
@@ -256,7 +285,7 @@ for ( curStudy in seq( length( files.to.download ) ) ){
 	
 		# store the basename of the file,
 		# replacing the extension with `.rda`
-		bn <- gsub( 'sav|por|dta' , 'rda' , basename( fp ) )
+		bn <- gsub( 'sav|por|dta' , 'rda' , basename( fp[ 1 ] ) )
 			
 		# convert all column names in the data.frame to lowercase
 		names( x ) <- tolower( names( x ) )

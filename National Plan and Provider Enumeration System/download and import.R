@@ -1,6 +1,18 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # national plan and provider enumeration system files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# path.to.7z <- "7za"							# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/NPPES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/download%20and%20import.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -21,9 +33,36 @@
 ##########################################################################
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#####################################################################################################################################################
+# macintosh and *nix users need 7za installed:  http://superuser.com/questions/548349/how-can-i-install-7zip-so-i-can-run-it-from-terminal-on-os-x  #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# path.to.7z <- "7za"														# # this is probably the correct line for macintosh and *nix
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# the line above sets the location of the 7-zip program on your local computer. uncomment it by removing the `#` and change the directory if ya did #
+#####################################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 # # # # # # # # # # # # # # #
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
+
+
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ###################################################################################################################################
@@ -35,11 +74,21 @@
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( "R.utils" )
+# install.packages( c( "R.utils" , "downloader" ) )
 
 
-require(R.utils)	# load the R.utils package (counts the number of lines in a file quickly)
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(R.utils)	# load the R.utils package (counts the number of lines in a file quickly)
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(downloader)	# downloads and then runs the source() function on scripts from github
+
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 
@@ -84,11 +133,27 @@ fn <-
 	)
 
 # download the file to the temporary file on the local disk
-download.file( fn , tf , mode = 'wb' )
+download.cache( fn , tf , mode = 'wb' )
 
 # after downloading the file successfully,
 # unzip the temporary file to the temporary folder..
-z <- unzip( tf , exdir = td )
+
+# extract the file, platform-specific
+if ( .Platform$OS.type == 'windows' ){
+
+	z <- unzip( tf , exdir = td )
+
+} else {
+
+	# build the string to send to the terminal on non-windows systems
+	dos.command <- paste0( '"' , path.to.7z , '" x ' , tf , ' -o"' , tempdir() , '"' )
+
+	system( dos.command )
+
+	z <- list.files( tempdir() , full.names = TRUE )
+
+}
+
 
 # ..and identify the appropriate 
 # comma separated value (csv) file
@@ -105,9 +170,16 @@ batfile <-
 					# set the path to the directory where the initialization batch file and all data will be stored
 					database.directory = getwd() ,
 					# must be empty or not exist
-					
+
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
 					
 					# choose a database name
 					dbname = "nppes" ,
@@ -134,7 +206,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `nppes.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -173,7 +245,7 @@ pid <- monetdb.server.start( batfile )
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
 
 # now put everything together and create a connection to the monetdb server.
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 # from now on, the 'db' object will be used for r to connect with the monetdb server
 
 
@@ -227,7 +299,7 @@ sql.create <-
 	)
 
 # run the actual MonetDB table creation command
-dbSendUpdate( db , sql.create )
+dbSendQuery( db , sql.create )
 
 
 # create a read-only input connection..
@@ -241,7 +313,7 @@ outcon <- file( tf2 , "w" )
 while( length( z <- readLines( incon , n = 50000 ) ) > 0 ){
 
 	# replace all double-backslahses with nothing..
-	z <- gsub( "\\" , "" , z , fixed = TRUE )
+	z <- gsub( "\\\\" , "" , z )
 	
 	# ..and write the resultant lines
 	# to the output file connection
@@ -276,7 +348,7 @@ sql.update <-
 	)
 
 # execute the COPY INTO command
-dbSendUpdate( db , sql.update )
+dbSendQuery( db , sql.update )
 
 # # # # # # # # #
 # end of import #
@@ -288,13 +360,16 @@ dbDisconnect( db )
 # and close it using the `pid`
 monetdb.server.stop( pid )
 
+# give things ten seconds to shut down
+Sys.sleep( 10 )
+
 
 ####################################################################
 # lines of code to hold on to for all other nppes monetdb analyses #
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `nppes.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -305,7 +380,7 @@ dbname <- "nppes"
 dbport <- 50006
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # # # # run your analysis commands # # # #
 
@@ -329,7 +404,7 @@ message( paste( "all done.  DO NOT set" , getwd() , "read-only or subsequent scr
 
 message( "got that? monetdb directories should not be set read-only." )
 # don't worry, you won't update any of these tables so long as you exclusively stick with the dbGetQuery() function
-# instead of the dbSendUpdate() function (you'll see examples in the analysis scripts)
+# instead of the dbSendQuery() function (you'll see examples in the analysis scripts)
 
 
 # for more details on how to work with data in r

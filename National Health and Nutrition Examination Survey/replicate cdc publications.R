@@ -3,6 +3,16 @@
 # replication of tables published by the centers for disease control & prevention
 # using 1999-2000 and 2001-2002 demographics, laboratory, and examination files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NHANES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20and%20Nutrition%20Examination%20Survey/replicate%20cdc%20publications.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # the centers for disease control & prevention have published sample sas, sudaan, and stata code at:
 # http://www.cdc.gov/nchs/tutorials/Nhanes/Downloads/intro_original.htm
 
@@ -75,12 +85,12 @@ options( digits = 15 )
 # install.packages( "survey" )
 
 
-require(foreign) # load foreign package (converts data files into R)
-require(survey)  # load survey package (analyzes complex design surveys)
+library(foreign) # load foreign package (converts data files into R)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

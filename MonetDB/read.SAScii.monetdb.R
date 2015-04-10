@@ -7,7 +7,7 @@ sql.copy.into <-
 		
 		# import the data into the database
 		sql.update <- paste0( "copy " , num.lines , " offset 2 records into " , tablename , " from '" , tf2 , "' using delimiters " , delimiters  , nullas ) 
-		dbSendUpdate( connection , sql.update )
+		dbSendQuery( connection , sql.update )
 		
 		# return true when it's completed
 		TRUE
@@ -53,17 +53,15 @@ read.SAScii.monetdb <-
 		tf <- tempfile()
 		td <- tempdir()
 		tf2 <- tempfile() 
-		tf3 <- tempfile()
 	} else {
 		# otherwise, put them in the protected folder
 		tf.path <- normalizePath( tf.path )
 		td <- tf.path
 		tf <- paste0( tf.path , "/" , tablename , "1" )
 		tf2 <- paste0( tf.path , "/" , tablename , "2" )
-		tf3 <- paste0( tf.path , "/" , tablename , "3" )
 	}
 	
-	file.create( tf , tf2 , tf3 )
+	file.create( tf , tf2 )
 	
 	
 	# scientific notation contains a decimal point when converted to a character string..
@@ -76,9 +74,22 @@ read.SAScii.monetdb <-
 	
 	# read.SAScii.monetdb depends on the SAScii package and the descr package
 	# to install these packages, use the line:
-	# install.packages( c( 'SAScii' , 'descr' ) )
-	require(SAScii)
-	require(descr)
+	# install.packages( c( 'SAScii' , 'descr' , 'downloader' , 'R.utils' ) )
+	library(SAScii)
+	library(descr)
+	library(downloader)
+	library(R.utils)
+	
+	if ( !exists( "download.cache" ) ){
+		# load the download.cache and related functions
+		# to prevent re-downloading of files once they've been downloaded.
+		source_url( 
+			"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+			prompt = FALSE , 
+			echo = FALSE 
+		)
+	}
+
 	
 	
 	x <- parse.SAScii( sas_ri , beginline , lrecl )
@@ -112,7 +123,7 @@ read.SAScii.monetdb <-
 	#if the ASCII file is stored in an archive, unpack it to a temporary file and run that through read.fwf instead.
 	if ( zipped ){
 		#download the CPS repwgts zipped file
-		download.file( fn , tf , mode = "wb" )
+		download.cache( fn , tf , mode = "wb" )
 		#unzip the file's contents and store the file name within the temporary directory
 		fn <- unzip( tf , exdir = td , overwrite = T )
 		
@@ -168,33 +179,20 @@ read.SAScii.monetdb <-
 	}
 	
 	# create another file connection to the temporary file to store the fwf2csv output..
-	zz <- file( tf3 , open = 'wt' )
-	sink( zz , type = 'message' )
 	
 	# convert the fwf to a csv
 	# verbose = TRUE prints a message, which has to be captured.
-	fwf2csv( fn , tf2 , names = x$varname , begin = s , end = e , verbose = TRUE )
+	fwf2csv( fn , tf2 , names = x$varname , begin = s , end = e , verbose = F )
 	on.exit( { file.remove( tf2 ) } )
 	
-	# stop storing the output
-	sink( type = "message" )
-	# unlink( tf3 )
-	on.exit( { file.remove( tf3 ) } )
-	
-	# read the contents of that message into a character string
-	zzz <- readLines( tf3 )
-	
-	# read it up to the first space..
-	last.char <- which( strsplit( zzz , '')[[1]]==' ')
-	
 	# ..and that's the number of lines in the file
-	num.lines <- substr( zzz , 1 , last.char - 1 )
+	num.lines <- countLines( tf2 )
 	
 	# in speed tests, adding the exact number of lines in the file was much faster
 	# than setting a very high number and letting it finish..
 
 	# create the table in the database
-	dbSendUpdate( connection , sql.create )
+	dbSendQuery( connection , sql.create )
 	
 	##############################
 	# begin importation attempts #
@@ -257,7 +255,7 @@ read.SAScii.monetdb <-
 				)
 				
 			if ( !skip.decimal.division ){
-				dbSendUpdate( connection , sql )
+				dbSendQuery( connection , sql )
 			
 				# give the MonetDB mserver.exe a certain number of seconds to process each column
 				Sys.sleep( sleep.between.col.updates )
@@ -278,7 +276,7 @@ read.SAScii.monetdb <-
 			sql.drop <- paste0( "ALTER TABLE " , tablename , " DROP toss_" , i )
 			
 			# and drop them!
-			dbSendUpdate( connection , sql.drop )
+			dbSendQuery( connection , sql.drop )
 		}
 	}
 	

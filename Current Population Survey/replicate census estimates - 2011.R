@@ -3,6 +3,16 @@
 # annual social and economic supplement
 # 2011
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/CPS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Current%20Population%20Survey/replicate%20census%20estimates%20-%202011.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -56,11 +66,11 @@
 # install.packages( c ( "survey" , "RSQLite" ) )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

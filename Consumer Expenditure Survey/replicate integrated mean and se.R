@@ -4,8 +4,18 @@
 # using 2011 public use microdata
 
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/CES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Consumer%20Expenditure%20Survey/replicate%20integrated%20mean%20and%20se.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # this r script will replicate the massive table in the folder "Programs 2011\SAS\2011 Integrated Mean and SE.lst" inside the bls documentation
-# ftp://ftp.bls.gov/pub/special.requests/ce/pumd/documentation/documentation11.zip
+# http://www.bls.gov/cex/pumd/documentation/documentation11.zip
 
 
 # if you have never used the r language before,
@@ -29,7 +39,7 @@
 # prior to running this replication script, all ces 2011 public use microdata files must be loaded as R data      #
 # files (.rda) on the local machine. running the "2010-2011 ces - download.R" script will create these files.     #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# https://github.com/ajdamico/usgsd/blob/master/Consumer%20Expenditure%20Survey/2010-2011%20ces%20-%20download.R  #
+# https://github.com/ajdamico/usgsd/blob/master/Consumer%20Expenditure%20Survey/download%20all%20microdata.R      #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # that script will save a number of .rda files in C:/My Directory/CES/2011/ (or the working directory was chosen) #
 ###################################################################################################################
@@ -65,7 +75,7 @@ options( scipen = 20 )
 library(stringr) 	# load stringr package (manipulates character strings easily)
 library(reshape2)	# load reshape2 package (transposes data frames quickly)
 library(sqldf)		# load the sqldf package (enables sql queries on data frames)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 
 # # # # # # # # # # # # # # # # # # # #

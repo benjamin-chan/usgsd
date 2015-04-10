@@ -1,6 +1,17 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # national plan and provider enumeration system files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `./nppes.sh` instead
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Plan%20and%20Provider%20Enumeration%20System/merge%20taxonomy%20ids.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -35,13 +46,29 @@
 # # # # # # # # # # # # # # #
 
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
 # remove the # in order to run this install.packages line only once
 # install.packages( c( "stringr" , "downloader" ) )
 
 
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
-require(stringr)	# load stringr package (manipulates character strings easily)
-require(downloader)	# downloads and then runs the source() function on scripts from github
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(stringr)	# load stringr package (manipulates character strings easily)
+library(downloader)	# downloads and then runs the source() function on scripts from github
 
 
 # create a temporary file on the local disk
@@ -172,7 +199,7 @@ head( w ) ; tail( w )
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/NPPES/nppes.bat"
+# batfile <- "C:/My Directory/NPPES/nppes.bat"		# # note for mac and *nix users: `nppes.bat` might be `./nppes.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -183,7 +210,7 @@ dbname <- "nppes"
 dbport <- 50006
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # end of lines of code to hold on to for all other nppes monetdb analyses #
 ###########################################################################
@@ -236,7 +263,7 @@ ftcbs <-
 	)
 
 # remove records missing their first taxonomy code
-ftcbs <- ftcbs[ ftcbs$healthcare_provider_taxonomy_code_1 != '' , ]
+ftcbs <- ftcbs[ !( ftcbs$healthcare_provider_taxonomy_code_1 %in% '' ) & !is.na( ftcbs$healthcare_provider_taxonomy_code_1 ) , ]
 
 # merge this first taxonomy code by state table
 # with the `w` taxonomy code table
@@ -246,11 +273,15 @@ v <-
 		ftcbs , 
 		w , 
 		by.x = 'healthcare_provider_taxonomy_code_1' , 
-		by.y = 'taxonomy.id' 
+		by.y = 'taxonomy.id' ,
+		all.x = TRUE
 	)
 	
-# confirm that every record has exactly one match
-stopifnot( nrow( ftcbs ) == nrow( v ) )
+# count..
+nrow( subset( v , is.na( title ) ) )
+
+# ..and then look at non-matching records (there are a few)
+table( subset( v , is.na( title ) )$healthcare_provider_taxonomy_code_1 )
 
 
 # look at the first six records

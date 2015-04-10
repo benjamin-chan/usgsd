@@ -2,6 +2,16 @@
 # national health interview survey
 # 2011 personsx plus samadult with multiple imputation
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NHIS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20Interview%20Survey/2011%20personsx%20plus%20samadult%20with%20multiple%20imputation%20-%20analyze.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -52,11 +62,11 @@
 # remove the # in order to run this install.packages line only once
 # install.packages( c( "survey" , "mitools" ) )
 	
-require(survey) 	# load survey package (analyzes complex design surveys)
-require(mitools)	# allows analysis of multiply-imputed survey data
+library(survey) 	# load survey package (analyzes complex design surveys)
+library(mitools)	# allows analysis of multiply-imputed survey data
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

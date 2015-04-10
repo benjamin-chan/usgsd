@@ -3,6 +3,16 @@
 # replication of tables published by the berkeley survey documentation and analysis
 # using 1972-2010 cross-sectional cumulative data (release 2, feb. 2012)
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/GSS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/General%20Social%20Survey/replicate%20berkeley%20sda.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # the main norc gss website - http://norc.org/gss+website - directs analysts wishing to generate statistics to
 # the berkeley survey documentation and analysis project at http://sda.berkeley.edu
 # since quick tables currently available on their website use the release #1 version of the gss data,
@@ -70,13 +80,13 @@ options( digits = 8 )
 # install.packages( "survey" , "downloader" )
 
 
-require(foreign) # load foreign package (converts data files into R)
-require(survey)  # load survey package (analyzes complex design surveys)
+library(foreign) # load foreign package (converts data files into R)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # by default, R will crash if a primary sampling unit (psu) has a single observation
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 # by uncommenting this line:
 # options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN

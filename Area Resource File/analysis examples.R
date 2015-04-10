@@ -1,6 +1,16 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # area resource file
-# 2012-2013
+# 2013-2014
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/ARF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Area%20Resource%20File/analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -25,13 +35,13 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # https://github.com/ajdamico/usgsd/blob/master/Area%20Resource%20File/download.R #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# that script will create a file "arf2012.rda" with 'arf' in C:/My Directory/ARF  #
+# that script will create a file "arf2013.rda" with 'arf' in C:/My Directory/ARF  #
 ###################################################################################
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 # set your working directory.
-# the ARF 2012-2013 data files should have been stored here
+# the ARF 2013-2014 data files should have been stored here
 # after running the program described above
 # use forward slashes instead of back slashes
 
@@ -40,8 +50,8 @@
 # ..in order to set your current working directory
 
 
-# load the 2012-2013 ARF data file
-load( "arf2012.rda" )
+# load the 2013-2014 ARF data file
+load( "arf2013.rda" )
 
 
 # now the 'arf' data frame is available in memory..
@@ -49,7 +59,7 @@ load( "arf2012.rda" )
 ncol( arf )
 
 
-# the "AHRF 2012-2013 Technical Documentation.xls" file in the current working directory contains field labels
+# the "AHRF 2013-2014 Technical Documentation.xls" file in the current working directory contains field labels
 # so create a smaller data table with only a few columns of interest
 # first, create a character vector containing only the columns you'll need:
 variables.to.keep <-
@@ -59,7 +69,6 @@ variables.to.keep <-
 		"f12424" , 			# state abbreviation
 		"f00010" , 			# county name
 		"f13156" , 			# ssa beneficiary county code
-		"f1389209" ,		# metro/micro statistical area name
 		"f0453010" ,		# 2010 census population
 		"f1212910"	 		# total active m.d.s non-federal & federal
 	)
@@ -74,7 +83,7 @@ head( arf.sub )
 
 
 # rename the variables something more user-friendly
-names( arf.sub ) <- c( "fips" , "state" , "stateab" , "county" , "ssa" , "mmsa" , "pop2010" , "md2010" )
+names( arf.sub ) <- c( "fips" , "state" , "stateab" , "county" , "ssa" , "pop2010" , "md2010" )
 
 # and re-examine the first six records
 head( arf.sub )
@@ -192,11 +201,11 @@ nrow( fakedata )
 # follow the code presented at http://www.thisisthegreenroom.com/2009/choropleths-in-r/
 
 # install the maps package if you don't already have it
-install.packages( c( "maps" , "mapproj" ) )
+# install.packages( c( "maps" , "mapproj" ) )
 
 # load the maps and mapproj packages - both include mapping-related functions
-require(maps)
-require(mapproj)
+library(maps)
+library(mapproj)
 
 # load county fips codes data (included with the maps package)
 data(county.fips)

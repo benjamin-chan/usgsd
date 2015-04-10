@@ -14,6 +14,17 @@
 # ..send an e-mail and tell 'em thank you!
 
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/NHANES/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20and%20Nutrition%20Examination%20Survey/replicate%20human%20exposure%20to%20chemicals%20report.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # **********************************************************************
 # Analyse the NHANES 2007-2008 data on urinary Bisphenol A (BPA)
 #
@@ -33,10 +44,21 @@ library(foreign)         # required for reading SAS XPORT transport format files
 library(survey)          # required for the analysis of complex survey samples
 
 
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
+
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Setting to produce conservative standard errors instead of crashing
 # this setting matches the MISSUNIT option in SUDAAN
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 options(survey.lonely.psu="adjust")
 

@@ -2,6 +2,16 @@
 # survey of business owners
 # 2007
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/SBO/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Survey%20of%20Business%20Owners/download%20and%20import.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -34,7 +44,7 @@
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "survey" , "RSQLite" , "RSQLite.extfuns" , "mitools" , "downloader" ) )
+# install.packages( c( "survey" , "RSQLite" , "mitools" , "downloader" ) )
 
 
 # name the database (.db) file to be saved in the working directory
@@ -52,11 +62,19 @@ sbo.dbname <- "sbo07.db"
 if ( file.exists( paste( getwd() , sbo.dbname , sep = "/" ) ) ) warning( "the database file already exists in your working directory.\nyou might encounter an error if you are running the same year as before or did not allow the program to complete.\ntry changing the sbo.dbname in the settings above." )
 
 
-require(RSQLite) 			# load RSQLite package (creates database files in R)
-require(RSQLite.extfuns) 	# load RSQLite package (allows mathematical functions, like SQRT)
-require(mitools) 			# load mitools package (analyzes multiply-imputed data)
-require(survey) 			# load survey package (analyzes complex design surveys)
-require(downloader)			# downloads and then runs the source() function on scripts from github
+library(RSQLite) 			# load RSQLite package (creates database files in R)
+library(mitools) 			# load mitools package (analyzes multiply-imputed data)
+library(survey) 			# load survey package (analyzes complex design surveys)
+library(downloader)			# downloads and then runs the source() function on scripts from github
+
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 # load sbo-specific functions (a specially-designed series of multiply-imputed, hybrid-survey-object setup to match the census bureau's tech docs)
@@ -68,7 +86,7 @@ tf <- tempfile() ; td <- tempdir()
 
 # download the 2007 public use microdata sample (pums)
 # zipped file to the temporary file on your local disk
-download.file( "http://www2.census.gov/econ/sbo/07/pums/pums_csv.zip" , tf , mode = 'wb' )
+download.cache( "http://www2.census.gov/econ/sbo/07/pums/pums_csv.zip" , tf , mode = 'wb' )
 
 # unzip the temporary (zipped) file into the temporary directory
 # and store the filepath of the unzipped file(s) into a character vector `z`
@@ -78,7 +96,7 @@ z <- unzip( tf , exdir = td )
 db <- dbConnect( SQLite() , sbo.dbname )
 
 # load the mathematical functions in the r package RSQLite.extfuns
-init_extensions(db)
+initExtension(db)
 
 # read the comma separated value (csv) file you just downloaded
 # directly into the rsqlite database you just created.

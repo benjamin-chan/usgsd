@@ -2,6 +2,16 @@
 # national survey on drug use and health
 # 2010
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NSDUH/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Survey%20on%20Drug%20Use%20and%20Health/2010%20single-year%20-%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -51,12 +61,12 @@
 # install.packages( "survey" )
 
 
-require(survey)  # load survey package (analyzes complex design surveys)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # by default, R will crash if a primary sampling unit (psu) has a single observation
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 # by keeping this line uncommented:
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
@@ -87,7 +97,7 @@ KeepVars <-
 		
 		"cigtry" , 		# age when first smoked a cigarette
 
-		"pden" ,		# population density variable
+		"pden00" ,		# population density variable
 		
 		"health"		# self-reported health status
 	)
@@ -268,7 +278,7 @@ svyby(
 y.city <-
 	subset(
 		y ,
-		pden == 1
+		pden00 == 1
 	)
 # now any of the above commands can be re-run
 # using the y.city object

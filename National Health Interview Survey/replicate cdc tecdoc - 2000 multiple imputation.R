@@ -2,6 +2,16 @@
 # national health interview survey
 # 2000 personsx and incmimp
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/NHIS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20Interview%20Survey/replicate%20cdc%20tecdoc%20-%202000%20multiple%20imputation.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -43,13 +53,13 @@
 # install.packages( c( "survey" , "SAScii" , "mitools" , "RCurl" ) )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(SAScii)		# load the SAScii package (imports ascii data with a SAS script)
-require(mitools)	# load mitools package (analyzes multiply-imputed data)
-require(RCurl)		# load RCurl package (downloads https files)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(SAScii)		# load the SAScii package (imports ascii data with a SAS script)
+library(mitools)	# load mitools package (analyzes multiply-imputed data)
+library(RCurl)		# load RCurl package (downloads https files)
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 # options( survey.lonely.psu = "adjust" )
 
 #############################################
@@ -85,7 +95,7 @@ names( NHIS.00.personsx.df ) <- tolower( names( NHIS.00.personsx.df ) )
 
 # location of incmimp sas import file - no longer hosted on the cdc's ftp site
 incmimp.sas <- 
-	"https://raw.github.com/ajdamico/usgsd/master/National%20Health%20Interview%20Survey/INCMIMP2000.sas"
+	"https://raw.githubusercontent.com/ajdamico/usgsd/master/National%20Health%20Interview%20Survey/INCMIMP2000.sas"
 
 # location of incmimp ascii data files
 incmimp.exe <- 

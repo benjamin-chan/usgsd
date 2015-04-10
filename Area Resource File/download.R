@@ -2,6 +2,16 @@
 # area resource file
 # 2013-2014
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/ARF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Area%20Resource%20File/download.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -47,11 +57,11 @@ setwd( "E:/Share/DataRepository/AHRF" )
 
 
 # load necessary libraries
-require(RSQLite) 	# load RSQLite package (creates database files in R)
-require(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
-require(descr) 		# load the descr package (converts fixed-width files to delimited files)
-require(foreign) 	# load foreign package (converts data files into R)
-require(downloader)	# downloads and then runs the source() function on scripts from github
+library(RSQLite) 	# load RSQLite package (creates database files in R)
+library(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
+library(descr) 		# load the descr package (converts fixed-width files to delimited files)
+library(foreign) 	# load foreign package (converts data files into R)
+library(downloader)	# downloads and then runs the source() function on scripts from github
 
 
 # load the read.SAScii.sqlite function (a variant of read.SAScii that creates a database directly)

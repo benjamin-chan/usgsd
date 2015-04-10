@@ -3,6 +3,21 @@
 # public use microdata sample
 # 1990 , 2000
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# setwd( "C:/My Directory/PUMS/" )
+# one.percent.files.to.download <- c( 1990 , 2000 )
+# five.percent.files.to.download <- c( 1990 , 2000 )
+# exclude.puerto.rico <- TRUE
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/United%20States%20Decennial%20Census%20Public%20Use%20Microdata%20Sample/download%20and%20import.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -33,10 +48,36 @@
 # ..in order to set your current working directory
 
 
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
 
 # # # # # # # # # # # # # # #
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
+
+
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ###################################################################################################################################
@@ -83,13 +124,13 @@
 # # # # # # # # #
 
 
-require(SAScii) 		# load the SAScii package (imports ascii data with a SAS script)
-require(gdata) 			# load the gdata package (imports excel [.xls] files into R)
-require(R.utils)		# load the R.utils package (counts the number of lines in a file quickly)
-require(stringr)		# load stringr package (manipulates character strings easily)
-require(descr) 			# load the descr package (converts fixed-width files to delimited files)
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(downloader)		# downloads and then runs the source() function on scripts from github
+library(SAScii) 		# load the SAScii package (imports ascii data with a SAS script)
+library(gdata) 			# load the gdata package (imports excel [.xls] files into R)
+library(R.utils)		# load the R.utils package (counts the number of lines in a file quickly)
+library(stringr)		# load stringr package (manipulates character strings easily)
+library(descr) 			# load the descr package (converts fixed-width files to delimited files)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(downloader)		# downloads and then runs the source() function on scripts from github
 
 
 # load the `get.tsv` and `pums.import.and.merge` functions from my github account.
@@ -102,6 +143,13 @@ source_url( "https://raw.github.com/ajdamico/usgsd/master/MonetDB/monet.read.tsv
 # this is a modification of the SAScii package's read.SAScii function
 # that imports tab-separated value files directly into MonetDB
 
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 # # # # # # # # #
@@ -122,10 +170,17 @@ batfile <-
 					# set the path to the directory where the initialization batch file and all data will be stored
 					database.directory = paste0( getwd() , "/MonetDB" ) ,
 					# must be empty or not exist
-					
+
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
-					
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
+										
 					# choose a database name
 					dbname = "pums" ,
 					
@@ -151,7 +206,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -178,7 +233,7 @@ dbport <- 50010
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -189,7 +244,7 @@ dbname <- "pums"
 dbport <- 50010
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # but the lines of code below will re-start the server
@@ -262,7 +317,7 @@ if ( 1990 %in% c( one.percent.files.to.download , five.percent.files.to.download
 	tf <- tempfile()
 	
 	# download the pums sas script provided by the census bureau
-	download.file( "http://www2.census.gov/census_1990/1990_PUMS_A/TOOLS/sas/PUMS.SAS" , tf )
+	download.cache( "http://www2.census.gov/census_1990/1990_PUMS_A/TOOLS/sas/PUMS.SAS" , tf )
 	
 	# read the script into working memory
 	sas.90 <- readLines( tf )
@@ -315,7 +370,7 @@ if ( 2000 %in% c( one.percent.files.to.download , five.percent.files.to.download
 	pums.layout <- tempfile()
 
 	# download the layout excel file
-	download.file( "http://www2.census.gov/census_2000/datasets/PUMS/FivePercent/5%25_PUMS_record_layout.xls" ,	pums.layout , mode = 'wb' )
+	download.cache( "http://www2.census.gov/census_2000/datasets/PUMS/FivePercent/5%25_PUMS_record_layout.xls" ,	pums.layout , mode = 'wb' )
 
 	# initiate a quick layout read-in function #
 	code.str <-
@@ -404,11 +459,11 @@ if ( 1990 %in% one.percent.files.to.download ){
 	# run the MonetDB server, determine the server path, connect to the server
 	pid <- monetdb.server.start( batfile )
 	monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-	db <- dbConnect( MonetDB.R() , monet.url )
+	db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 	# using the monetdb connection, import each of the household- and person-level tab-separated value files
 	# into the database, naming the household, person, and also merged file with these character strings
-	pums.1990.1.m.design <-
+	pums.m.design <-
 		pums.import.merge.design(
 			db = db , monet.url = monet.url ,
 			fn = tsv.90.1 , 
@@ -420,7 +475,7 @@ if ( 1990 %in% one.percent.files.to.download ){
 		)
 
 	# save the monetdb-backed complex sample survey design object to the local disk
-	save( pums.1990.1.m.design , file = "pums_1990_1_m.rda" )
+	save( pums.m.design , file = "pums_1990_1_m.rda" )
 
 	# disconnect from the current monet database..
 	dbDisconnect( db )
@@ -465,11 +520,11 @@ if ( 1990 %in% five.percent.files.to.download ){
 	# run the MonetDB server, determine the server path, connect to the server
 	pid <- monetdb.server.start( batfile )
 	monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-	db <- dbConnect( MonetDB.R() , monet.url )
+	db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 	# using the monetdb connection, import each of the household- and person-level tab-separated value files
 	# into the database, naming the household, person, and also merged file with these character strings
-	pums.1990.5.m.design <-
+	pums.m.design <-
 		pums.import.merge.design(
 			db = db , monet.url = monet.url ,
 			fn = tsv.90.5 , 
@@ -481,7 +536,7 @@ if ( 1990 %in% five.percent.files.to.download ){
 		)
 
 	# save the monetdb-backed complex sample survey design object to the local disk
-	save( pums.1990.5.m.design , file = "pums_1990_5_m.rda" )
+	save( pums.m.design , file = "pums_1990_5_m.rda" )
 	
 	# disconnect from the current monet database..
 	dbDisconnect( db )
@@ -522,11 +577,11 @@ if ( 2000 %in% one.percent.files.to.download ){
 	# run the MonetDB server, determine the server path, connect to the server
 	pid <- monetdb.server.start( batfile )
 	monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-	db <- dbConnect( MonetDB.R() , monet.url )
+	db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 	# using the monetdb connection, import each of the household- and person-level tab-separated value files
 	# into the database, naming the household, person, and also merged file with these character strings
-	pums.2000.1.m.design <-
+	pums.m.design <-
 		pums.import.merge.design(
 			db = db , monet.url = monet.url ,
 			fn = tsv.00.1 , 
@@ -538,7 +593,7 @@ if ( 2000 %in% one.percent.files.to.download ){
 		)
 
 	# save the monetdb-backed complex sample survey design object to the local disk
-	save( pums.2000.1.m.design , file = "pums_2000_1_m.rda" )
+	save( pums.m.design , file = "pums_2000_1_m.rda" )
 
 	# disconnect from the current monet database..
 	dbDisconnect( db )
@@ -579,11 +634,11 @@ if ( 2000 %in% five.percent.files.to.download ){
 	# run the MonetDB server, determine the server path, connect to the server
 	pid <- monetdb.server.start( batfile )
 	monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-	db <- dbConnect( MonetDB.R() , monet.url )
+	db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 	# using the monetdb connection, import each of the household- and person-level tab-separated value files
 	# into the database, naming the household, person, and also merged file with these character strings
-	pums.2000.5.m.design <-
+	pums.m.design <-
 		pums.import.merge.design(
 			db = db , monet.url = monet.url ,
 			fn = tsv.00.5 , 
@@ -595,7 +650,7 @@ if ( 2000 %in% five.percent.files.to.download ){
 		)
 
 	# save the monetdb-backed complex sample survey design object to the local disk
-	save( pums.2000.5.m.design , file = "pums_2000_5_m.rda" )
+	save( pums.m.design , file = "pums_2000_5_m.rda" )
 	
 	# disconnect from the current monet database..
 	dbDisconnect( db )
@@ -611,7 +666,7 @@ if ( 2000 %in% five.percent.files.to.download ){
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"
+# batfile <- "C:/My Directory/PUMS/MonetDB/pums.bat"		# # note for mac and *nix users: `pums.bat` might be `pums.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -622,7 +677,7 @@ dbname <- "pums"
 dbport <- 50010
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #

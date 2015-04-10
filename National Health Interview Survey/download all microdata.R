@@ -1,7 +1,18 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # national health interview survey
-# 1963 through 2012
 # all available files (including documentation)
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/NHIS/" )
+# nhis.years.to.download <- 2013:1963
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/National%20Health%20Interview%20Survey/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -51,16 +62,16 @@ if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block
 
 
 # remove the # in order to run this install.packages line only once
-# install.packages( c( "SAScii" , "RCurl" ) )
+# install.packages( c( "SAScii" , "RCurl" , "downloader" ) )
 
 
 # define which years to download #
 
 # uncomment this line to download all available data sets
 # uncomment this line by removing the `#` at the front
-# nhis.years.to.download <- 2012:1963
+# nhis.years.to.download <- 2013:1963
 
-# uncomment this line to only download the most current year
+# uncomment this line to only download the 2012 files
 # nhis.years.to.download <- 2012
 
 # uncomment this line to download, for example, 2000 and 2009-2011
@@ -86,22 +97,32 @@ csv <- FALSE
 # no need to edit anything below this line #
 
 
-if ( 2013 %in% nhis.years.to.download ) message( "2013 imputed income not yet available" )
+if ( 2014 %in% nhis.years.to.download ) message( "2014 imputed income not yet available" )
 
 
 # # # # # # # # #
 # program start #
 # # # # # # # # #
 
-require(RCurl)		# load RCurl package (downloads files from the web)
-require(SAScii) 	# load the SAScii package (imports ascii data with a SAS script)
-require(foreign) 	# load foreign package (converts data files into R)
+library(RCurl)				# load RCurl package (downloads files from the web)
+library(SAScii) 			# load the SAScii package (imports ascii data with a SAS script)
+library(foreign) 			# load foreign package (converts data files into R)
+library(downloader)			# downloads and then runs the source() function on scripts from github
 
 # create a temporary file and a temporary directory
 tf <- tempfile() ; td <- tempdir()
 
 # main NHIS ftp site
 main.nhis.ftp <- "ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Datasets/NHIS/"
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
+
 
 
 # begin looping through every year specified
@@ -138,14 +159,14 @@ for ( year in nhis.years.to.download ){
 		
 		for ( fn in doc.files ){
 		
-			try.error <- NULL
+			attempt1 <- NULL
 			
 			# attempt #1:
 			# simply download the file into the local directory
-			try.error <- try( download.file( paste0( doc.nhis.ftp , fn ) , destfile = paste0( docs.output.directory , fn ) , mode = 'wb' ) , silent = T )
+			attempt1 <- try( download.cache( paste0( doc.nhis.ftp , fn ) , destfile = paste0( docs.output.directory , fn ) , mode = 'wb' ) , silent = TRUE )
 			
 			# if the attempt to download the file resulted in an error..
-			if ( class( try.error ) == "try-error" ){
+			if ( class( attempt1 ) == 'try-error' ){
 				
 				# attempt #2
 				
@@ -155,7 +176,7 @@ for ( year in nhis.years.to.download ){
 				# and try again!
 				
 				# simply download the file into the local directory
-				download.file( paste0( doc.nhis.ftp , fn ) , destfile = paste0( docs.output.directory , fn ) , mode = 'wb' )
+				download.cache( paste0( doc.nhis.ftp , fn ) , destfile = paste0( docs.output.directory , fn ) , mode = 'wb' )
 				
 			}
 
@@ -315,10 +336,10 @@ for ( year in nhis.years.to.download ){
 			
 			# attempt #1:
 			# simply download the file into the local directory
-			try.error <- try( download.file( efl , destfile = paste0( output.directory , fn ) , mode = 'wb' ) , silent = T )
+			try.error <- try( download.cache( efl , destfile = paste0( output.directory , fn ) , mode = 'wb' ) , silent = TRUE )
 			
 			# if the attempt to download the file resulted in an error..
-			if ( class( try.error ) == "try-error" ){
+			if ( class( try.error ) == 'try-error' ){
 				
 				# attempt #2
 				
@@ -328,7 +349,7 @@ for ( year in nhis.years.to.download ){
 				# and try again!
 				
 				# simply download the file into the local directory
-				download.file( efl , destfile = paste0( output.directory , fn ) , mode = 'wb' )
+				download.cache( efl , destfile = paste0( output.directory , fn ) , mode = 'wb' )
 				
 			}
 						
@@ -428,7 +449,7 @@ for ( year in nhis.years.to.download ){
 	
 	# if the year is after 1996, then download the imputed income files
 	# if ( year > 1996 ){
-	if ( year %in% 1997:2012 ){
+	if ( year %in% 1997:2013 ){
 		
 		# imputed income files must be downloaded using a different method #
 	
@@ -449,7 +470,7 @@ for ( year in nhis.years.to.download ){
 			efl <- paste0( year.nhis.ftp , i )
 	
 			# ..and simply download the file into the local directory
-			download.file( efl , destfile = paste0( output.directory , i ) , mode = 'wb' )
+			download.cache( efl , destfile = paste0( output.directory , i ) , mode = 'wb' )
 			
 		}
 		
@@ -486,8 +507,8 @@ for ( year in nhis.years.to.download ){
 		
 		# download the compressed file from the nhis ftp site
 		# and save it to a temporary file on your local disk
-		# ..but just save this download.file into an error-handling expression
-		dfeh <- expression( download.file( efl , tf , mode = "wb" ) )
+		# ..but just save this download.cache into an error-handling expression
+		dfeh <- expression( download.cache( efl , tf , mode = "wb" ) )
 	
 		
 		# start of error-handling

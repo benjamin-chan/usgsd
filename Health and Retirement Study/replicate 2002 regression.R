@@ -1,7 +1,17 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # health and retirement study
 # replication of regression statistics published by RAND
-# using the 1992 - 2010 public use file (version L)
+# using the 1992 - 2010 public use file (version N)
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/HRS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Health%20and%20Retirement%20Study/replicate%202002%20regression.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # note that these statistics come very close to the example regression found on PDF page B76 of
 # http://hrsonline.isr.umich.edu/sitedocs/dmgt/IntroUserGuide.pdf
@@ -68,15 +78,15 @@ db.name <- 'RAND.db'
 # program start #
 # # # # # # # # #
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 
 db <- dbConnect( SQLite() , db.name )			# connect to the SQLite database (.db)
 
 
 # create a new table called 'temp' which throws out all missing values of the weight column
-dbSendQuery( db , "CREATE TABLE temp AS SELECT * FROM hrsL WHERE r6wthh >= 0" )
+dbSendQuery( db , "CREATE TABLE temp AS SELECT * FROM hrs WHERE r6wthh >= 0" )
 
 
 # create survey design object with HRS design information

@@ -1,7 +1,16 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # health and retirement study
 # longitudinal RAND contributed file
-# 1992 - 2010 public use file (version L)
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/HRS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Health%20and%20Retirement%20Study/longitudinal%20RAND%20-%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -44,11 +53,11 @@
 # install.packages( "survey" )
 
 
-require(survey)		# load survey package (analyzes complex design surveys)
-require(RSQLite) 	# load RSQLite package (creates database files in R)
+library(survey)		# load survey package (analyzes complex design surveys)
+library(RSQLite) 	# load RSQLite package (creates database files in R)
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 
@@ -63,8 +72,8 @@ db <- dbConnect( SQLite() , db.name )			# connect to the SQLite database (.db)
 
 # create two new tables called 'temp5resp' and 'temp10resp'
 # which throw out all missing values of the weight column for one particular wave
-dbSendQuery( db , "CREATE TABLE temp10resp AS SELECT * FROM hrsL WHERE r10wtresp >= 0" )
-dbSendQuery( db , "CREATE TABLE temp4resp AS SELECT * FROM hrsL WHERE r4wtresp >= 0" )
+dbSendQuery( db , "CREATE TABLE temp10resp AS SELECT * FROM hrs WHERE r10wtresp >= 0" )
+dbSendQuery( db , "CREATE TABLE temp4resp AS SELECT * FROM hrs WHERE r4wtresp >= 0" )
 
 
 # create two survey design objects with HRS design information #

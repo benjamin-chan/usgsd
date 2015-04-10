@@ -1,6 +1,19 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # behavioral risk factor surveillance system
-# 1984-2012 single-year files
+# 1984-2013 single-year files
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )	# # only windows users need this line
+# options( encoding = "windows-1252" )		# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/BRFSS/" )
+# years.to.download <- 1984:2013
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Behavioral%20Risk%20Factor%20Surveillance%20System/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -30,6 +43,22 @@
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
 
+
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ###################################################################################################################################
 # prior to running this analysis script, monetdb must be installed on the local machine.  follow each step outlined on this page: #
@@ -50,11 +79,12 @@
 # it's running.  don't believe me?  check the working directory (set below) for a new r data file (.rda) every few hours.
 
 
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(foreign) 		# load foreign package (converts data files into R)
+library(downloader)		# downloads and then runs the source() function on scripts from github
+library(R.utils)		# load the R.utils package (counts the number of lines in a file quickly)
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
-require(foreign) 		# load foreign package (converts data files into R)
-require(downloader)		# downloads and then runs the source() function on scripts from github
 
 # set your BRFSS data directory
 # after downloading and importing
@@ -65,6 +95,25 @@ require(downloader)		# downloads and then runs the source() function on scripts 
 # uncomment this line by removing the `#` at the front..
 # setwd( "C:/My Directory/BRFSS/" )
 
+
+# # # are you on a non-windows system? # # #
+if ( .Platform$OS.type != 'windows' ) print( 'non-windows users: read this block' )
+# the cdc's ftp site has a few SAS importation
+# scripts in a non-standard format
+# if so, before running this whole download program,
+# you might need to run this line..
+# options( encoding="windows-1252" )
+# ..to turn on windows-style encoding.
+# # # end of non-windows system edits.
+
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 # load the read.SAScii.monetdb() function,
 # which imports ASCII (fixed-width) data files directly into a monet database
@@ -85,10 +134,17 @@ batfile <-
 					# set the path to the directory where the initialization batch file and all data will be stored
 					database.directory = paste0( getwd() , "/MonetDB" ) ,
 					# must be empty or not exist
-					
+
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
-					
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
+										
 					# choose a database name
 					dbname = "brfss" ,
 					
@@ -114,7 +170,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -139,7 +195,7 @@ dbport <- 50004
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -150,7 +206,7 @@ dbname <- "brfss"
 dbport <- 50004
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
@@ -163,7 +219,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 
 # uncomment this line to download all available data sets
 # uncomment this line by removing the `#` at the front
-# years.to.download <- 1984:2012
+# years.to.download <- 1984:2013
 
 # pretty orwellian, huh?	
 
@@ -191,8 +247,11 @@ db <- dbConnect( MonetDB.R() , monet.url )
 ##################################
 
 						
-#create a temporary file and a temporary directory..
-tf <- tempfile() ; td <- tempdir()
+# create three temporary files and a temporary directory..
+tf <- tempfile() ; td <- tempdir() ; zf <- tempfile() ; zf2 <- tempfile()
+
+# create a download directory
+dir.create( "download" , showWarnings = FALSE )
 
 
 # the 1984 - 2001 brfss single-year files are small enough to be read directly into RAM
@@ -217,11 +276,11 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 		) 
 		
 	# download the file from the cdc's ftp site
-	download.file( fn , tf , mode = 'wb' )
+	download.cache( fn , tf , mode = 'wb' )
 	
 	# unzip it within the temporary directory on your local hard drive and
 	# store the location it's been unzipped into a new character string variable called local.fn
-	local.fn <- unzip( tf , exdir = td )
+	local.fn <- unzip( tf , exdir = "download" )
 	
 	# read the sas transport file into r
 	x <- read.xport( local.fn ) 
@@ -249,7 +308,7 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 	first.attempt <- second.attempt <- NULL
 
 	# first try to read the csv file into the monet database with NAs for NA strings
-	first.attempt <- try( monet.read.csv( db , tf , tablename , nrows = rtctr , na.strings = "NA" , nrow.check = rtctr ) , silent = TRUE )
+	first.attempt <- try( monet.read.csv( db , tf , tablename , na.strings = "NA" , nrow.check = rtctr ) , silent = TRUE )
 	
 	# if the monet.read.csv() function returns an error instead of working properly..
 	if( class( first.attempt ) == "try-error" ) {
@@ -263,7 +322,7 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 		
 		# and re-try reading the csv file directly into the monet database, this time with a different NA string setting
 		second.attempt <-
-			try( monet.read.csv( db , tf , tablename , nrows = rtctr , na.strings = "" , nrow.check = rtctr ) , silent = TRUE )
+			try( monet.read.csv( db , tf , tablename , na.strings = "" , nrow.check = rtctr ) , silent = TRUE )
 	}
 
 	# if that still doesn't work, import the table manually
@@ -300,7 +359,7 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 			)
 		
 		# create the table in the database
-		dbSendUpdate( db , sql.create )
+		dbSendQuery( db , sql.create )
 		
 		# now build the sql command that will copy all records from the csv file (still on the local hard disk)
 		# into the monet database, using the structure that's just been defined by the sql.create object above
@@ -316,13 +375,10 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 			)
 			
 		# run the sql command
-		dbSendUpdate( db , sql.update )
+		dbSendQuery( db , sql.update )
 			
 	}
-	
-	# remove the sas transport file from the local disk
-	file.remove ( local.fn )
-	
+		
 	# free up RAM
 	rm( x )
 	
@@ -333,12 +389,12 @@ for ( year in intersect( years.to.download , 1984:2001 ) ){
 		
 
 		
-# the 2002 - 2012 brfss single-year files are too large to be read directly into RAM
+# the 2002 - 2013 brfss single-year files are too large to be read directly into RAM
 # so import them using the read.SAScii.monetdb() function,
 # a variant of the SAScii package's read.SAScii() function
 
-# loop through each year specified by the user, so long as it's within the 2002-2012 range
-for ( year in intersect( years.to.download , 2002:2012 ) ){
+# loop through each year specified by the user, so long as it's within the 2002-2013 range
+for ( year in intersect( years.to.download , 2002:2013 ) ){
 
 	# remove the temporary file (defined waaaay above) from the local disk, if it exists
 	file.remove( tf )
@@ -357,19 +413,12 @@ for ( year in intersect( years.to.download , 2002:2012 ) ){
 		fn <- "ftp://ftp.cdc.gov/pub/data/brfss/LLCP2011ASC.ZIP"
 		sas_ri <- "http://www.cdc.gov/brfss/annual_data/2011/SASOUT11_LLCP.SAS"
 		
-	# otherwise, if the file to download is 2002..
-	} else if ( year == 2002 ){
-	
-		# the zipped filename and sas importation script are here:
-		fn <- paste0( "ftp://ftp.cdc.gov/pub/data/brfss/CDBRFS" , year , "ASC.ZIP" )
-		sas_ri <- paste0( "http://www.cdc.gov/brfss/technical_infodata/surveydata/" , year , "/SASOUT" , substr( year , 3 , 4 ) , ".SAS" )
-	
 	# otherwise..
 	} else {
 	
 		# the zipped filename and sas importation script fit this pattern:
-		fn <- paste0( "ftp://ftp.cdc.gov/pub/data/brfss/CDBRFS" , substr( year , 3 , 4 ) , "ASC.ZIP" )
-		sas_ri <- paste0( "http://www.cdc.gov/brfss/technical_infodata/surveydata/" , year , "/SASOUT" , substr( year , 3 , 4 ) , ".SAS" )
+		fn <- paste0( "ftp://ftp.cdc.gov/pub/data/brfss/cdbrfs" , ifelse( year == 2002 , year , substr( year , 3 , 4 ) ) , "asc.zip" )
+		sas_ri <- paste0( "http://www.cdc.gov/brfss/annual_data/" , year , if ( year %in% 2008:2009 ) "/files" , "/sasout" , substr( year , 3 , 4 ) , ".SAS" )
 		
 	}
 
@@ -379,6 +428,8 @@ for ( year in intersect( years.to.download , 2002:2012 ) ){
 	# throw out a few columns that cause importation trouble with monetdb
 	if ( year == 2009 ) z <- z[ -159:-168 ]
 	if ( year == 2011 )	z <- z[ !grepl( "CHILDAGE" , z ) ]
+	if ( year == 2013 ) z[ 361:362 ] <- c( "_FRTLT1z       2259" , "_VEGLT1z       2260" )
+
 
 	# replace all underscores in variable names with x's
 	z <- gsub( "_" , "x" , z , fixed = TRUE )
@@ -396,13 +447,60 @@ for ( year in intersect( years.to.download , 2002:2012 ) ){
 	# re-write the sas importation script to a file on the local hard drive
 	writeLines( z , tf )
 
+	# download the zipped file
+	download.cache( fn , zf , mode = 'wb' )
+	
+	#unzip the file's contents and store the file name within the temporary directory
+	local.fn <- unzip( zf , exdir = 'download' , overwrite = T )
+	
+	# if it's 2013..
+	if ( year == 2013 ){
+		
+		# create a read connection..
+		incon <- file( local.fn , "r")
+		
+		# ..and a write connection
+		outcon <- file( zf2 , "w" )
+	
+		# read through every line
+		while( length( line <- readLines( incon , 1 , skipNul = TRUE ) ) > 0 ){
+		
+			# remove the stray slash
+			line <- gsub( "\\" , " " , line , fixed = TRUE )
+			
+			# remove the stray everythings
+			line <- gsub( "[^[:alnum:]///' \\.]" , " " , line )
+			
+			# mac/unix converts some weird characters to two digits
+			# while windows convers the to one.  deal with it.
+			line <- iconv( line , "" , "ASCII" , sub = "abcxyz" )
+			line <- gsub( "abcxyzabcxyz" , " " , line )
+			line <- gsub( "abcxyz" , " " , line )
+	
+			# write the result to the output connection
+			writeLines( line , outcon )
+			
+		}
+		
+		# remove the original
+		file.remove( local.fn )
+		
+		# redirect the local filename to the new file
+		local.fn <- zf2
+		
+		# close both connections
+		close( outcon )
+		close( incon )
+		
+	}
+	
 	# actually run the read.SAScii.monetdb() function
 	# and import the current fixed-width file into the monet database
 	read.SAScii.monetdb (
-		fn ,
+		local.fn ,
 		tf ,
 		beginline = 70 ,
-		zipped = T ,						# the ascii file is stored in a zipped file
+		zipped = F ,						# the ascii file is no longer stored in a zipped file
 		tl = TRUE ,							# convert all column names to lowercase
 		tablename = paste0( 'b' , year ) ,	# the table will be stored in the monet database as bYYYY.. for example, 2010 will be stored as the 'b2010' table
 		connection = db
@@ -421,10 +519,10 @@ for ( year in intersect( years.to.download , 2002:2012 ) ){
 # create a data frame containing all weight, psu, and stratification variables for each year
 survey.vars <-
 	data.frame(
-		year = 1984:2012 ,
-		weight = c( rep( 'x_finalwt' , 10 ) , rep( 'xfinalwt' , 17 ) , rep( 'xllcpwt' , 2 ) ) ,
-		psu = c( rep( 'x_psu' , 10 ) , rep( 'xpsu' , 19 ) ) ,
-		strata = c( rep( 'x_ststr' , 10 ) , rep( 'xststr' , 19 ) )
+		year = 1984:2013 ,
+		weight = c( rep( 'x_finalwt' , 10 ) , rep( 'xfinalwt' , 17 ) , rep( 'xllcpwt' , 3 ) ) ,
+		psu = c( rep( 'x_psu' , 10 ) , rep( 'xpsu' , 20 ) ) ,
+		strata = c( rep( 'x_ststr' , 10 ) , rep( 'xststr' , 20 ) )
 	)
 
 # convert all columns in the survey.vars table to character strings,
@@ -449,11 +547,11 @@ for ( year in years.to.download ){
 	weight <- survey.vars[ survey.vars$year == year , 'weight' ]
 
 	# add a column containing all ones to the current table
-	dbSendUpdate( db , paste0( 'alter table ' , tablename , ' add column one int' ) )
-	dbSendUpdate( db , paste0( 'UPDATE ' , tablename , ' SET one = 1' ) )
+	dbSendQuery( db , paste0( 'alter table ' , tablename , ' add column one int' ) )
+	dbSendQuery( db , paste0( 'UPDATE ' , tablename , ' SET one = 1' ) )
 	
 	# add a column containing the record (row) number
-	dbSendUpdate( db , paste0( 'alter table ' , tablename , ' add column idkey int auto_increment' ) )
+	dbSendQuery( db , paste0( 'alter table ' , tablename , ' add column idkey int auto_increment' ) )
 
 	# create a sqlsurvey complex sample design object
 	brfss.design <-
@@ -507,7 +605,7 @@ monetdb.server.stop( pid )
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -518,7 +616,7 @@ dbname <- "brfss"
 dbport <- 50004
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #

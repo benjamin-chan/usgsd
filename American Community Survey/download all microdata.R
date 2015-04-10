@@ -1,7 +1,22 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # american community survey
-# 2005-2011 1-year (plus when available 3-year and 5-year files)
+# 2005-2013 1-year (plus when available 3-year and 5-year files)
 # household-level, person-level, and merged files
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# path.to.7z <- "7za"							# # only macintosh and *nix users need this line
+# library(downloader)
+# setwd( "C:/My Directory/ACS/" )
+# single.year.datasets.to.download <- 2005:2013
+# three.year.datasets.to.download <- 2007:2013
+# five.year.datasets.to.download <- 2009:2013
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/American%20Community%20Survey/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -26,9 +41,36 @@
 #####################################################################################
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#####################################################################################################################################################
+# macintosh and *nix users need 7za installed:  http://superuser.com/questions/548349/how-can-i-install-7zip-so-i-can-run-it-from-terminal-on-os-x  #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# path.to.7z <- "7za"														# # this is probably the correct line for macintosh and *nix
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# the line above sets the location of the 7-zip program on your local computer. uncomment it by removing the `#` and change the directory if ya did #
+#####################################################################################################################################################
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 # # # # # # # # # # # # # # #
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
+
+
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ###################################################################################################################################
@@ -50,13 +92,26 @@
 # it's running.  don't believe me?  check the working directory (set below) for a new r data file (.rda) every few hours.
 
 
+
+
 # remove the # in order to run this install.packages line only once
-# install.packages( "sas7bdat" )
+# install.packages( c( "R.utils" , "downloader" , "sas7bdat" ) )
 
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
-require(sas7bdat)		# loads files ending in .sas7bdat directly into r as data.frame objects
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(sas7bdat)		# loads files ending in .sas7bdat directly into r as data.frame objects
+library(downloader)		# downloads and then runs the source() function on scripts from github
+library(R.utils)		# load the R.utils package (counts the number of lines in a file quickly)
+
+
+# load the download.cache and related functions
+# to prevent re-downloading of files once they've been downloaded.
+source_url( 
+	"https://raw.github.com/ajdamico/usgsd/master/Download%20Cache/download%20cache.R" , 
+	prompt = FALSE , 
+	echo = FALSE 
+)
 
 
 # set your ACS data directory
@@ -84,8 +139,15 @@ batfile <-
 					# must be empty or not exist
 					
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
-					
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
+										
 					# choose a database name
 					dbname = "acs" ,
 					
@@ -111,7 +173,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"
+# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"		# # note for mac and *nix users: `acs.bat` might be `acs.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -138,7 +200,7 @@ dbport <- 50001
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"
+# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"		# # note for mac and *nix users: `acs.bat` might be `acs.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -149,7 +211,7 @@ dbname <- "acs"
 dbport <- 50001
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # disconnect from the current monet database
@@ -169,17 +231,17 @@ monetdb.server.stop( pid )
 # single-year datasets are available back to 2005
 # uncomment this line to download all available single-year data sets
 # uncomment this line by removing the `#` at the front
-# single.year.datasets.to.download <- 2005:2011
+# single.year.datasets.to.download <- 2005:2013
 	
 # three-year datasets are available back to 2007
 # uncomment this line to download all available three-year data sets
 # uncomment this line by removing the `#` at the front
-# three.year.datasets.to.download <- 2007:2011
+# three.year.datasets.to.download <- 2007:2013
 
 # five-year datasets are available back to 2009
 # uncomment this line to download all available five-year data sets
 # uncomment this line by removing the `#` at the front
-# five.year.datasets.to.download <- 2009:2011
+# five.year.datasets.to.download <- 2009:2013
 
 # # # # # # # # # # # # # #
 # other download examples #
@@ -209,8 +271,8 @@ monetdb.server.stop( pid )
 ##################################
 
 						
-#create a temporary file and a temporary directory..
-tf <- tempfile() ; td <- tempdir()
+#create a temporary file..
+tf <- tempfile()
 
 # loop through each possible acs year
 for ( year in 2050:2005 ){
@@ -245,8 +307,10 @@ for ( year in 2050:2005 ){
 			}
 
 			# loop through both household- and person-level files
-			for ( j in c( 'h' , 'p' ) ){			
+			for ( j in c( 'h' , 'p' ) ){
 
+				# clear out the temporary directory
+				unlink( list.files( tempdir() , full.names = TRUE ) , recursive = TRUE )
 			
 				# determine column types #
 				
@@ -277,10 +341,10 @@ for ( year in 2050:2005 ){
 				}
 							
 				# store a command: "download the sas zipped file to the temporary file location"
-				download.command <- download.file( sas.file.location , tf , mode = "wb" )
+				download.command <- download.cache( sas.file.location , tf , mode = "wb" )
 
 				# unzip to a local directory
-				wy <- unzip( tf , exdir = td )
+				wy <- unzip( tf , exdir = tempdir() )
 				
 				wyoming.table <- read.sas7bdat( wy[ grep( 'sas7bdat' , wy ) ] )
 				
@@ -304,9 +368,8 @@ for ( year in 2050:2005 ){
 				gc()
 				
 				# end of column type determination #
+	
 				
-							
-			
 				# wait ten seconds, just to make sure any previous servers closed
 				# and you don't get a gdk-lock error from opening two-at-once
 				Sys.sleep( 10 )
@@ -315,7 +378,7 @@ for ( year in 2050:2005 ){
 				pid <- monetdb.server.start( batfile )
 				
 				# immediately connect to it
-				db <- dbConnect( MonetDB.R() , monet.url )
+				db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 			
 				# create a character string containing the http location of the zipped csv file to be downloaded
 				ACS.file.location <-
@@ -329,7 +392,7 @@ for ( year in 2050:2005 ){
 				# try downloading the file three times before breaking
 				
 				# store a command: "download the ACS zipped file to the temporary file location"
-				download.command <- expression( download.file( ACS.file.location , tf , mode = "wb" ) )
+				download.command <- expression( download.cache( ACS.file.location , tf , mode = "wb" ) )
 
 				# try the download immediately.
 				# run the above command, using error-handling.
@@ -359,8 +422,21 @@ for ( year in 2050:2005 ){
 				# once the download has completed..
 				
 				# unzip the file's contents to the temporary directory
-				fn <- unzip( tf , exdir = td , overwrite = T )
+				# extract the file, platform-specific
+				if ( .Platform$OS.type == 'windows' ){
+
+					fn <- unzip( tf , exdir = tempdir() , overwrite = TRUE )
+
+				} else {
 				
+					# build the string to send to the terminal on non-windows systems
+					dos.command <- paste0( '"' , path.to.7z , '" x ' , tf , ' -aoa -o"' , tempdir() , '"' )
+
+					system( dos.command )
+
+					fn <- list.files( tempdir() , full.names = TRUE )
+
+				}
 				
 				# delete all the files that do not include the text 'csv' in their filename
 				file.remove( fn[ !grepl( 'csv' , fn ) ] )
@@ -450,30 +526,20 @@ for ( year in 2050:2005 ){
 					)
 				
 				# actually execute the 'create table' sql command
-				dbSendUpdate( db , sql )
+				dbSendQuery( db , sql )
 
 				# end of initiating the table in the database #
 				
 				# loop through each csv file
 				for ( csvpath in fn ){
 				
-					
 					# quickly figure out the number of lines in the data file
-					# code thanks to 
-					# http://costaleconomist.blogspot.com/2010/02/easy-way-of-determining-number-of.html
-
-					# in speed tests, increasing this chunk_size does nothing
-					chunk_size <- 1000
-					testcon <- file( csvpath ,open = "r" )
-					nooflines <- 0
-					( while( ( linesread <- length( readLines( testcon , chunk_size ) ) ) > 0 )
-					nooflines <- nooflines + linesread )
-					close( testcon )
-				
+					nooflines <- countLines( csvpath )
+					
 					# now try to copy the current csv file into the database
 					first.attempt <-
 						try( {
-							dbSendUpdate( 
+							dbSendQuery( 
 								db , 
 								paste0( 
 									"copy " , 
@@ -506,12 +572,12 @@ for ( year in 2050:2005 ){
 						pid <- monetdb.server.start( batfile )
 						
 						# immediately connect to it
-						db <- dbConnect( MonetDB.R() , monet.url )
+						db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 					
 						# and run the exact same command again.
 						second.attempt <-
 							try( {
-								dbSendUpdate( 
+								dbSendQuery( 
 									db , 
 									paste0( 
 										"copy " , 
@@ -563,7 +629,7 @@ for ( year in 2050:2005 ){
 						close( fpt )
 						
 						# re-run the copy into command..
-						dbSendUpdate( 
+						dbSendQuery( 
 								db , 
 								paste0( 
 									"copy " , 
@@ -610,7 +676,7 @@ for ( year in 2050:2005 ){
 			pid <- monetdb.server.start( batfile )
 			
 			# immediately connect to it
-			db <- dbConnect( MonetDB.R() , monet.url )
+			db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 			
 			############################################
@@ -646,22 +712,22 @@ for ( year in 2050:2005 ){
 			headers.m <- unique( c( headers.h , headers.p ) )
 			
 			# create the merged table
-			dbSendUpdate( db , i.j )
+			dbSendQuery( db , i.j )
 			
 			# add columns named 'one' to each table..
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_p add column one int' ) )
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_h add column one int' ) )
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_m add column one int' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_p add column one int' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_h add column one int' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_m add column one int' ) )
 
 			# ..and fill them all with the number 1.
-			dbSendUpdate( db , paste0( 'UPDATE ' , k , '_p SET one = 1' ) )
-			dbSendUpdate( db , paste0( 'UPDATE ' , k , '_h SET one = 1' ) )
-			dbSendUpdate( db , paste0( 'UPDATE ' , k , '_m SET one = 1' ) )
+			dbSendQuery( db , paste0( 'UPDATE ' , k , '_p SET one = 1' ) )
+			dbSendQuery( db , paste0( 'UPDATE ' , k , '_h SET one = 1' ) )
+			dbSendQuery( db , paste0( 'UPDATE ' , k , '_m SET one = 1' ) )
 					
 			# add a column called 'idkey' containing the row number
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_p add column idkey int auto_increment' ) )
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_h add column idkey int auto_increment' ) )
-			dbSendUpdate( db , paste0( 'alter table ' , k , '_m add column idkey int auto_increment' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_p add column idkey int auto_increment' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_h add column idkey int auto_increment' ) )
+			dbSendQuery( db , paste0( 'alter table ' , k , '_m add column idkey int auto_increment' ) )
 			
 			
 			# now the current database contains three tables more tables than it did before
@@ -741,6 +807,7 @@ for ( year in 2050:2005 ){
 			monetdb.server.stop( pid )
 			
 		}
+
 	}
 }
 
@@ -764,7 +831,7 @@ Sys.sleep( 10 )
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"
+# batfile <- "C:/My Directory/ACS/MonetDB/acs.bat"		# # note for mac and *nix users: `acs.bat` might be `acs.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -775,7 +842,7 @@ dbname <- "acs"
 dbport <- 50001
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #

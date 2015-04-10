@@ -14,8 +14,11 @@
 # if you've successfully installed monetdb to your machine,
 # you should be able to initiate your first database with these commands:
 
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
+
+# set your working directory
+# setwd( "C:/My Directory/" )
 
 
 # configure a test monetdb database on windows #
@@ -29,12 +32,19 @@ batfile <-
 	monetdb.server.setup(
 					
 					# set the path to the directory where the initialization batch file and all data will be stored
-					database.directory = "C:/My Directory/MonetDB" ,
+					database.directory = paste0( getwd() , "/MonetDB" ) ,
 					# must be empty or not exist
-					
+
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
-					
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
+										
 					# choose a database name
 					dbname = "test" ,
 					
@@ -60,7 +70,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/MonetDB/test.bat"
+# batfile <- "C:/My Directory/MonetDB/test.bat"		# # note for mac and *nix users: `test.bat` might be `test.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -85,7 +95,7 @@ dbport <- 50000
 # lines of code to hold on to for all other `test` monetdb analyses #
 
 # first: specify your batfile.  again, mine looks like this:
-batfile <- "C:/My Directory/MonetDB/test.bat"
+batfile <- "C:/My Directory/MonetDB/test.bat"		# # note for mac and *nix users: `test.bat` might be `test.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -96,7 +106,7 @@ dbname <- "test"
 dbport <- 50000
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #

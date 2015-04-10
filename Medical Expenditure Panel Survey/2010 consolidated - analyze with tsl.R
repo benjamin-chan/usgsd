@@ -2,6 +2,16 @@
 # medical expenditure panel survey
 # 2010 consolidated
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/MEPS/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Medical%20Expenditure%20Panel%20Survey/2010%20consolidated%20-%20analyze%20with%20tsl.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -76,11 +86,11 @@
 # install.packages( "survey" )
 
 
-require(survey)  # load survey package (analyzes complex design surveys)
+library(survey)  # load survey package (analyzes complex design surveys)
 
 
 # set R to produce conservative standard errors instead of crashing
-# http://faculty.washington.edu/tlumley/survey/exmample-lonely.html
+# http://r-survey.r-forge.r-project.org/survey/exmample-lonely.html
 options( survey.lonely.psu = "adjust" )
 # this setting matches the MISSUNIT option in SUDAAN
 

@@ -2,6 +2,18 @@
 # behavioral risk factor surveillance system
 # 2011
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
+# load( 'C:/My Directory/BRFSS/b2011 design.rda' )	# analyze the 2011 single-year brfss
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Behavioral%20Risk%20Factor%20Surveillance%20System/2011%20single-year%20-%20analysis%20examples.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -34,13 +46,29 @@
 # # # # # # # # # # # # # # #
 
 
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
+
 # remove the # in order to run this install.packages line only once
 # install.packages( "stringr" )
 
 
-require(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
-require(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
-require(stringr) 		# load stringr package (manipulates character strings easily)
+library(sqlsurvey)		# load sqlsurvey package (analyzes large complex design surveys)
+library(MonetDB.R)		# load the MonetDB.R package (connects r to a monet database)
+library(stringr) 		# load stringr package (manipulates character strings easily)
 
 
 # after running the r script above, users should have handy a few lines
@@ -53,7 +81,7 @@ require(stringr) 		# load stringr package (manipulates character strings easily)
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"
+# batfile <- "C:/My Directory/BRFSS/MonetDB/brfss.bat"		# # note for mac and *nix users: `brfss.bat` might be `brfss.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -64,7 +92,7 @@ dbname <- "brfss"
 dbport <- 50004
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 
 # # # # run your analysis commands # # # #
@@ -75,7 +103,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # connected to the 2011 single-year table
 
 # sqlite database-backed survey objects are described here: 
-# http://faculty.washington.edu/tlumley/survey/svy-dbi.html
+# http://r-survey.r-forge.r-project.org/survey/svy-dbi.html
 # monet database-backed survey objects are similar, but:
 # the database engine is, well, blazingly faster
 # the setup is kinda more complicated (but all done for you)
@@ -98,7 +126,7 @@ db <- dbConnect( MonetDB.R() , monet.url )
 # if the column classes are already correct, you could use this line -
 
 # connect the complex sample designs to the monet database #
-# brfss.d <- open( brfss.design , driver = MonetDB.R() )	# single-year design
+# brfss.d <- open( brfss.design , driver = MonetDB.R() , wait = TRUE )	# single-year design
 
 # - but they're not (at least for these analysis examples),
 # so you have to run three quick recodes

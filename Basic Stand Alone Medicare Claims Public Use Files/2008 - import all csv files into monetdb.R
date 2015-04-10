@@ -2,6 +2,17 @@
 # basic stand alone medicare claims public use files
 # 2008 files
 
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# library(downloader)
+# setwd( "C:/My Directory/BSAPUF/" )
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Basic%20Stand%20Alone%20Medicare%20Claims%20Public%20Use%20Files/2008%20-%20import%20all%20csv%20files%20into%20monetdb.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
+
 # if you have never used the r language before,
 # watch this two minute video i made outlining
 # how to run this script from start to finish
@@ -26,6 +37,22 @@
 # warning: monetdb required #
 # # # # # # # # # # # # # # #
 
+
+# windows machines and also machines without access
+# to large amounts of ram will often benefit from
+# the following option, available as of MonetDB.R 0.9.2 --
+# remove the `#` in the line below to turn this option on.
+# options( "monetdb.sequential" = TRUE )		# # only windows users need this line
+# -- whenever connecting to a monetdb server,
+# this option triggers sequential server processing
+# in other words: single-threading.
+# if you would prefer to turn this on or off immediately
+# (that is, without a server connect or disconnect), use
+# turn on single-threading only
+# dbSendQuery( db , "set optimizer = 'sequential_pipe';" )
+# restore default behavior -- or just restart instead
+# dbSendQuery(db,"set optimizer = 'default_pipe';")
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 ###################################################################################################################################
 # prior to running this analysis script, monetdb must be installed on the local machine.  follow each step outlined on this page: #
@@ -39,8 +66,8 @@
 # install.packages( "R.utils" )
 
 
-require(R.utils)	# load the R.utils package (counts the number of lines in a file quickly)
-require(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
+library(R.utils)	# load the R.utils package (counts the number of lines in a file quickly)
+library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -87,9 +114,16 @@ batfile <-
 					# set the path to the directory where the initialization batch file and all data will be stored
 					database.directory = paste0( getwd() , "/MonetDB" ) ,
 					# must be empty or not exist
-					
+
 					# find the main path to the monetdb installation program
-					monetdb.program.path = "C:/Program Files/MonetDB/MonetDB5" ,
+					monetdb.program.path = 
+						ifelse( 
+							.Platform$OS.type == "windows" , 
+							"C:/Program Files/MonetDB/MonetDB5" , 
+							"" 
+						) ,
+					# note: for windows, monetdb usually gets stored in the program files directory
+					# for other operating systems, it's usually part of the PATH and therefore can simply be left blank.
 					
 					# choose a database name
 					dbname = "bsapuf" ,
@@ -116,7 +150,7 @@ batfile
 # you will need to note the location of the batfile for future MonetDB analyses!
 
 # in future R sessions, you can create the batfile variable with a line like..
-# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"
+# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"		# # note for mac and *nix users: `bsapuf.bat` might be `bsapuf.sh` instead
 # obviously, without the `#` comment character
 
 # hold on to that line for future scripts.
@@ -197,7 +231,7 @@ rxp <- paste0( "./" , year , "/" , year , "_PD_Profiles_PUF.csv" )
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
 
 # now put everything together and create a connection to the monetdb server.
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 # from now on, the 'db' object will be used for r to connect with the monetdb server
 
 
@@ -217,10 +251,7 @@ monet.read.csv(
 	inpatient , 
 
 	# save the csv file in the monetdb to a data table named 'inpatient08'
-	paste0( 'inpatient' , substr( year , 3 , 4 ) ) , 
-
-	# count the number of records in the csv file(s)
-	nrows = sapply( inpatient , countLines ) 
+	paste0( 'inpatient' , substr( year , 3 , 4 ) )
 )
 
 
@@ -228,64 +259,56 @@ monet.read.csv(
 monet.read.csv( 
 	db , 
 	dme , 
-	paste0( 'dme' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( dme , countLines ) 
+	paste0( 'dme' , substr( year , 3 , 4 ) )
 )
 
 # store the five 2008 prescription drug events tables in the database as a single 'pde08' table
 monet.read.csv( 
 	db , 
 	pde , 
-	paste0( 'pde' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( pde , countLines ) 
+	paste0( 'pde' , substr( year , 3 , 4 ) )
 )
 
 # store the 2008 hospice table in the database as the 'hospice08' table
 monet.read.csv( 
 	db , 
 	hospice , 
-	paste0( 'hospice' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( hospice , countLines ) 
+	paste0( 'hospice' , substr( year , 3 , 4 ) )
 )
 
 # store the seven 2008 carrier line items tables in the database as a single 'carrier08' table
 monet.read.csv( 
 	db , 
 	carrier , 
-	paste0( 'carrier' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( carrier , countLines ) 
+	paste0( 'carrier' , substr( year , 3 , 4 ) )
 )
 
 # store the 2008 home health agency table in the database as the 'hha08' table
 monet.read.csv( 
 	db , 
 	hha , 
-	paste0( 'hha' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( hha , countLines ) 
+	paste0( 'hha' , substr( year , 3 , 4 ) )
 )
 
 # store the three 2008 outpatient claims tables in the database as a single 'outpatient08' table
 monet.read.csv( 
 	db , 
 	outpatient , 
-	paste0( 'outpatient' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( outpatient , countLines ) 
+	paste0( 'outpatient' , substr( year , 3 , 4 ) )
 )
 
 # store the 2008 snf table in the database as the 'snf08' table
 monet.read.csv( 
 	db , 
 	snf , 
-	paste0( 'snf' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( snf , countLines ) 
+	paste0( 'snf' , substr( year , 3 , 4 ) )
 )
 
 # store the 2008 chronic conditions table in the database as the 'cc08' table
 monet.read.csv( 
 	db , 
 	cc , 
-	paste0( 'cc' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( cc , countLines ) 
+	paste0( 'cc' , substr( year , 3 , 4 ) )
 )
 
 
@@ -297,8 +320,7 @@ ipbs.rows <- sapply( ipbs , countLines )
 monet.read.csv( 
 	db , 
 	ipbs , 
-	paste0( 'ipbs' , substr( year , 3 , 4 ) ) , 
-	nrows = ipbs.rows , 
+	paste0( 'ipbs' , substr( year , 3 , 4 ) ) ,
 	nrow.check = ipbs.rows 
 )
 
@@ -306,8 +328,7 @@ monet.read.csv(
 monet.read.csv( 
 	db , 
 	rxp , 
-	paste0( 'rxp' , substr( year , 3 , 4 ) ) , 
-	nrows = sapply( rxp , countLines ) ,
+	paste0( 'rxp' , substr( year , 3 , 4 ) ) ,
 	nrow.check = 10000
 )
 
@@ -337,7 +358,7 @@ monetdb.server.stop( pid )
 
 # first: specify your batfile.  again, mine looks like this:
 # uncomment this line by removing the `#` at the front..
-# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"
+# batfile <- "C:/My Directory/BSAPUF/MonetDB/bsapuf.bat"		# # note for mac and *nix users: `bsapuf.bat` might be `bsapuf.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
@@ -348,7 +369,7 @@ dbname <- "bsapuf"
 dbport <- 50003
 
 monet.url <- paste0( "monetdb://localhost:" , dbport , "/" , dbname )
-db <- dbConnect( MonetDB.R() , monet.url )
+db <- dbConnect( MonetDB.R() , monet.url , wait = TRUE )
 
 # # # # run your analysis commands # # # #
 
@@ -372,7 +393,7 @@ message( paste( "all done.  DO NOT set" , getwd() , "read-only or subsequent scr
 
 message( "got that? monetdb directories should not be set read-only." )
 # don't worry, you won't update any of these tables so long as you exclusively stick with the dbGetQuery() function
-# instead of the dbSendUpdate() function (you'll see examples in the analysis scripts)
+# instead of the dbSendQuery() function (you'll see examples in the analysis scripts)
 
 
 # for more details on how to work with data in r

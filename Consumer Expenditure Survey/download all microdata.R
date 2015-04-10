@@ -1,6 +1,17 @@
 # analyze survey data for free (http://asdfree.com) with the r language
 # consumer expenditure survey
-# 2007-2011
+# 1997-2013
+
+# # # # # # # # # # # # # # # # #
+# # block of code to run this # #
+# # # # # # # # # # # # # # # # #
+# library(downloader)
+# setwd( "C:/My Directory/CES/" )
+# years.to.download <- 2013:1997
+# source_url( "https://raw.github.com/ajdamico/usgsd/master/Consumer%20Expenditure%20Survey/download%20all%20microdata.R" , prompt = FALSE , echo = TRUE )
+# # # # # # # # # # # # # # #
+# # end of auto-run block # #
+# # # # # # # # # # # # # # #
 
 # if you have never used the r language before,
 # watch this two minute video i made outlining
@@ -34,15 +45,15 @@
 
 
 
-require(foreign) 	# load foreign package (converts data files into R)
+library(foreign) 	# load foreign package (converts data files into R)
 
 
 # uncomment this line to download all available data sets
 # uncomment this line by removing the `#` at the front
-# years.to.download <- 2011:2007
+# years.to.download <- 2013:1997
 
 # uncomment to only download the most current available year
-# years.to.download <- 2011
+# years.to.download <- 2013
 # but why not just download them all?  ;)
 
 
@@ -88,10 +99,10 @@ for ( year in years.to.download ){
 
 	# determine the exact path to the current year of microdata on the bureau of labor statistics ftp site
 	# for each of the four main consumer expenditure public use microdata files
-	intrvw.ftp <- paste0( "ftp://ftp.bls.gov/pub/special.requests/ce/pumd/data/stata/intrvw" , substr( year , 3 , 4 ) , ".zip" )
-	expn.ftp <- paste0( "ftp://ftp.bls.gov/pub/special.requests/ce/pumd/data/stata/expn" , substr( year , 3 , 4 ) , ".zip" )
-	diary.ftp <- paste0( "ftp://ftp.bls.gov/pub/special.requests/ce/pumd/data/stata/diary" , substr( year , 3 , 4 ) , ".zip" )
-	docs.ftp <- paste0( "ftp://ftp.bls.gov/pub/special.requests/ce/pumd/documentation/documentation" , substr( year , 3 , 4 ) , ".zip" )
+	intrvw.ftp <- paste0( "http://www.bls.gov/cex/pumd/data/stata/intrvw" , substr( year , 3 , 4 ) , ".zip" )
+	expn.ftp <- paste0( "http://www.bls.gov/cex/pumd/data/stata/expn" , substr( year , 3 , 4 ) , ".zip" )
+	diary.ftp <- paste0( "http://www.bls.gov/cex/pumd/data/stata/diary" , substr( year , 3 , 4 ) , ".zip" )
+	docs.ftp <- paste0( "http://www.bls.gov/cex/pumd/documentation/documentation" , substr( year , 3 , 4 ) , ".zip" )
 	
 	# loop through the interview, expenditure, diary, and documentation files and..
 	# download each to a temporary file
