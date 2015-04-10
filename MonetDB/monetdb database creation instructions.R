@@ -18,7 +18,7 @@ library(MonetDB.R)	# load the MonetDB.R package (connects r to a monet database)
 
 
 # set your working directory
-# setwd( "C:/My Directory/" )
+setwd( "C:\\Users\\chanb\\Documents\\" )
 
 
 # configure a test monetdb database on windows #
@@ -39,7 +39,7 @@ batfile <-
 					monetdb.program.path = 
 						ifelse( 
 							.Platform$OS.type == "windows" , 
-							"C:/Program Files/MonetDB/MonetDB5" , 
+							"C:\\Program Files\\MonetDB\\MonetDB5\\" , 
 							"" 
 						) ,
 					# note: for windows, monetdb usually gets stored in the program files directory
@@ -95,7 +95,7 @@ dbport <- 50000
 # lines of code to hold on to for all other `test` monetdb analyses #
 
 # first: specify your batfile.  again, mine looks like this:
-batfile <- "C:/My Directory/MonetDB/test.bat"		# # note for mac and *nix users: `test.bat` might be `test.sh` instead
+batfile <- "C:\\Users\\chanb\\Documents\\MonetDB\\test.bat"		# # note for mac and *nix users: `test.bat` might be `test.sh` instead
 
 # second: run the MonetDB server
 pid <- monetdb.server.start( batfile )
